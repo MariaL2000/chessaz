@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+
+
+
+:root {
+  /* Paleta Principal Beige (Header) */
+  --color-bg-beige: #F5F2EC;
+  /* Beige principal de fondo */
+  --color-bg-beige-dark: #E3DCCB;
+  /* Beige oscuro para difuminado suave */
+
+  /* Tonos Dorados (Basado en la paleta: #B79347) */
+  --color-gold: #B79347;
+  --color-gold-hover: #A07F3B;
+  --color-gold-light: #F9F5EC;
+  --color-border-custom: #c00505;
+
+  /* Azul Profundo / Noche (Basado en la paleta: #050A30) */
+  --color-blue: #060f54;
+  --color-blue-hover: #040a46;
+
+  /* Tono Neutro / Muted (Basado en la paleta: #8B8383) */
+  --color-gray-accent: #8B8383;
+
+  /* Fondos de UI / Cards */
+  --color-bg-card: #FFFFFF;
+  --color-border-custom: #E8E6E1;
+
+  /* Tipografía (Modo Claro) */
+  --color-text-main: #1A1510;
+  --color-text-muted: #8B8383;
+  /* Actualizado al tono neutro de la paleta */
+  --color-text-subtle: #A39E9E;
+}
+
+body {
+  background-color: var(--color-bg-beige);
+  color: var(--color-text-main);
+}

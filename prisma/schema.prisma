@@ -1,0 +1,213 @@
+generator client {
+  provider = "output"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// 1. AUTENTICACIÓN (NextAuth v5 / Auth.js)
+// ==========================================
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(TEACHER)
+  password      String?
+
+  // Auth.js Relations
+  accounts Account[]
+  sessions Session[]
+
+  // Application Relations
+  teacherProfile TeacherProfile?
+  purchases      Purchase[]
+  scans          NotationScan[]
+  reviews        Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ==========================================
+// 2. PERFIL DE PROFESOR
+// ==========================================
+
+model TeacherProfile {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fideTitle       String? // Ej: GM, IM, FM, CM, FI
+  fideId          String? // ID Oficial FIDE
+  peakRating      Int?
+  bio             String?
+  stripeAccountId String? // Para Stripe Connect (cobros/comisiones)
+
+  resources Resource[]
+  sales     Sale[]
+}
+
+// ==========================================
+// 3. RECURSOS EDUCATIVOS DE AJEDREZ
+// ==========================================
+
+enum ChessCategory {
+  OPENINGS // Aperturas y Defensas
+  TACTICS // Combinaciones y Puzzles
+  STRATEGY // Planes, Estructura de Peones
+  ENDGAMES // Finales (Teóricos y Prácticos)
+  LESSON_PLAN // Unidades Didácticas completas
+}
+
+enum ResourceType {
+  PDF_LESSON // Guías y teoría lista para imprimir
+  PGN_FILE // Partidas/Bases para ChessBase o Lichess
+  WORKSHEET // Tareas y ejercicios prácticos
+  BUNDLE // Paquete completo (PDF + PGN + Tarea)
+}
+
+model Resource {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  description String
+  category    ChessCategory
+  type        ResourceType
+
+  // Rangos de Elo del Alumno (Ej: 1000 - 1400)
+  minElo Int @default(0)
+  maxElo Int @default(2800)
+
+  // Archivos (URLs de Cloudinary)
+  fileUrl     String
+  previewUrl  String? // Lead Magnet / Muestra para publicidad
+  hasHomework Boolean @default(true)
+
+  price       Float   @default(0.0) // 0 = Gratis
+  isPublished Boolean @default(false) // Pendiente por defecto para revisión de admin
+
+  teacherId String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
+
+  purchases Purchase[]
+  reviews   Review[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// ==========================================
+// 4. VENTAS Y COMISIONES (STRIPE)
+// ==========================================
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+}
+
+model Purchase {
+  id         String         @id @default(cuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id])
+  resourceId String
+  resource   Resource       @relation(fields: [resourceId], references: [id])
+  amount     Float
+  status     PurchaseStatus @default(COMPLETED)
+  createdAt  DateTime       @default(now())
+
+  sale Sale?
+}
+
+model Sale {
+  id              String         @id @default(cuid())
+  purchaseId      String         @unique
+  purchase        Purchase       @relation(fields: [purchaseId], references: [id])
+  teacherId       String
+  teacher         TeacherProfile @relation(fields: [teacherId], references: [id])
+  grossAmount     Float // Monto total pagado
+  platformFee     Float // Comisión de la plataforma
+  teacherEarnings Float // Ganancia limpia del profesor
+  createdAt       DateTime       @default(now())
+}
+
+// ==========================================
+// 5. ESCANEO DE PLANILLAS CON IA / OCR
+// ==========================================
+
+enum ScanStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model NotationScan {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  imageUrl  String // URL de Cloudinary
+  pgnResult String? // Salida PGN generada
+  analysis  String? // Análisis de motor
+  status    ScanStatus @default(PROCESSING)
+  createdAt DateTime   @default(now())
+}
+
+// ==========================================
+// 6. VALORACIONES
+// ==========================================
+
+model Review {
+  id         String   @id @default(cuid())
+  rating     Int
+  comment    String?
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id])
+  createdAt  DateTime @default(now())
+}
