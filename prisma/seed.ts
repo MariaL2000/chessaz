@@ -5,7 +5,6 @@ import {
   ResourceType,
 } from "../app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
 import bcryptjs from "bcryptjs";
 import "dotenv/config";
 
@@ -15,8 +14,7 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is not defined in .env");
 }
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
+const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
@@ -158,6 +156,5 @@ async function main() {
     })
     .finally(async () => {
       await prisma.$disconnect();
-      await pool.end();
     });
 })();

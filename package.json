@@ -5,9 +5,19 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
