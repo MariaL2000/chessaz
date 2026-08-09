@@ -29,7 +29,7 @@ export const FinalCTA = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
         >
-          <Link href="/sign-up">
+          <Link href="/signup">
             <Button
               variant="register"
               size="md"
