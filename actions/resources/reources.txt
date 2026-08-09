@@ -5,3 +5,7 @@ getFilteredResources(filters): Permite realizar búsquedas avanzadas y filtrado 
 searchResourcesByName(name): Realiza una búsqueda rápida y optimizada de hasta 10 recursos filtrando directamente por coincidencia parcial en el título.
 
 createChessResource(data): Valida que el usuario tenga permisos de profesor o administrador, procesa y sube los archivos y vistas previas a Cloudinary, genera un slug único amigable para URLs, guarda el registro en la base de datos y actualiza la caché mediante revalidatePath.
+
+
+
+//update get-uzer-pur...

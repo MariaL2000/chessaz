@@ -37,7 +37,8 @@ export const HowItWorks = () => {
   return (
     <section
       id="about"
-      className="py-20 px-6 md:px-12 max-w-7xl mx-auto text-center relative overflow-hidden [font-family:var(--font-geist-sans)]"
+      className="py-20 px-6 md:px-12 max-w-7xl mx-auto text-center relative overflow-hidden"
+      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       <SectionHeader
         title="How Chessaz works"
@@ -55,22 +56,20 @@ export const HowItWorks = () => {
               className="flex flex-col items-center text-center group bg-white/50 backdrop-blur-md rounded-3xl p-4 border border-black/5 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 w-full"
               initial={{
                 opacity: 0,
-                y: 60,
-                clipPath: "inset(100% 0% 0% 0%)",
+                y: 30,
               }}
               whileInView={{
                 opacity: 1,
                 y: 0,
-                clipPath: "inset(0% 0% 0% 0%)",
               }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{
-                duration: 0.8,
-                delay: index * 0.15,
+                duration: 0.6,
+                delay: index * 0.1,
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
-              {/* Contenedor corregido con altura explicita y shrink-0 */}
+              {/* Contenedor de la Imagen */}
               <div className="relative w-full h-56 sm:h-60 rounded-2xl overflow-hidden mb-6 shadow-sm border border-black/5 bg-slate-100 group-hover:border-[var(--color-gold)]/50 transition-colors duration-500 shrink-0">
                 <Image
                   src={step.image}
@@ -97,14 +96,24 @@ export const HowItWorks = () => {
 
               {/* Título del Paso */}
               <h3
-                className="text-xl font-bold mb-2 tracking-tight [font-family:var(--font-geist-sans)]"
-                style={{ color: "var(--color-text-main)" }}
+                className="text-xl font-bold mb-2 tracking-tight"
+                style={{
+                  color: "var(--color-text-main)",
+                  fontFamily: "var(--font-geist-sans), sans-serif",
+                }}
               >
                 {step.num}
               </h3>
 
               {/* Explicación de los pasos */}
-              <p className="text-sm sm:text-base leading-relaxed font-normal max-w-xs text-[var(--color-text-main)]/80 [font-family:var(--font-geist-sans)]">
+              <p
+                className="text-sm sm:text-base leading-relaxed font-normal max-w-xs"
+                style={{
+                  color: "var(--color-text-main)",
+                  opacity: 0.8,
+                  fontFamily: "var(--font-geist-sans), sans-serif",
+                }}
+              >
                 {step.desc}
               </p>
             </motion.div>

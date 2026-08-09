@@ -121,7 +121,7 @@ export default function HelpGuidesPage() {
             <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-2xl overflow-hidden shadow-sm group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/steps/step1.PNG"
+                src="/steps/step1.png"
                 alt="Dashboard Setup Guide"
                 className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-500"
               />
@@ -139,7 +139,7 @@ export default function HelpGuidesPage() {
             <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-2xl overflow-hidden shadow-sm group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/learn1.PNG"
+                src="/learn1.png"
                 alt="PGN Upload Process"
                 className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-500"
               />
@@ -157,7 +157,7 @@ export default function HelpGuidesPage() {
             <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-2xl overflow-hidden shadow-sm group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/learn.PNG"
+                src="/learn.png"
                 alt="Student Interaction"
                 className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-500"
               />
@@ -175,7 +175,7 @@ export default function HelpGuidesPage() {
             <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-2xl overflow-hidden shadow-sm group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/steps/stepz5.PNG"
+                src="/steps/stepz5.png"
                 alt="Analytics & Payouts"
                 className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-500"
               />

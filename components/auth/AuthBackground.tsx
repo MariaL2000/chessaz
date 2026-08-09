@@ -15,9 +15,9 @@ export const AuthBackground: React.FC<AuthBackgroundProps> = ({
   subtitle,
 }) => {
   return (
-    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-12 bg-[var(--color-bg-beige)] text-[var(--color-text-main)] overflow-hidden">
+    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-12 bg-[var(--color-bg-beige)] text-[var(--color-text-main)] overflow-x-hidden pt-20 sm:pt-24 lg:pt-0">
       {/* ==================== SECCIÓN IZQUIERDA: FORMULARIO ==================== */}
-      <div className="lg:col-span-5 xl:col-span-5 flex flex-col justify-center items-center px-6 sm:px-12 py-10 lg:py-16 z-20 relative">
+      <div className="lg:col-span-5 xl:col-span-5 flex flex-col justify-center items-center px-6 sm:px-12 py-8 lg:py-16 z-20 relative">
         <div className="w-full max-w-md space-y-6">
           {/* Encabezado del Formulario */}
           {(title || subtitle) && (
@@ -43,7 +43,7 @@ export const AuthBackground: React.FC<AuthBackgroundProps> = ({
       </div>
 
       {/* ==================== SECCIÓN DERECHA: HERO / LAPTOP ==================== */}
-      <div className="lg:col-span-7 xl:col-span-7 relative min-h-[300px] sm:min-h-[400px] lg:min-h-screen flex items-center justify-center overflow-hidden">
+      <div className="lg:col-span-7 xl:col-span-7 relative min-h-[250px] sm:min-h-[350px] lg:min-h-screen flex items-center justify-center overflow-hidden">
         {/* Imagen Chezz Hero Laptop */}
         <Image
           src="/chess-hero-laptop.png"

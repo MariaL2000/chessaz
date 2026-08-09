@@ -59,11 +59,11 @@ export const Header = () => {
       >
         {/* ==================== 50% IZQUIERDA: CONTENIDO Y TEXTOS ==================== */}
         <motion.div
-          className="lg:col-span-1 px-4 sm:px-8 md:px-12 lg:pl-16 xl:pl-24 py-8 sm:py-12 lg:py-24 flex flex-col gap-5 sm:gap-6 z-10 max-w-2xl justify-self-start h-full justify-center"
+          className="lg:col-span-1 px-5 sm:px-8 md:px-12 lg:pl-16 xl:pl-24 py-10 sm:py-14 lg:py-24 flex flex-col gap-6 sm:gap-7 z-10 max-w-2xl justify-self-start h-full justify-center"
           variants={textVariants}
         >
           <motion.h1
-            className="text-xl sm:text-4xl xl:text-5xl font-extrabold leading-tight"
+            className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-extrabold leading-[1.15]"
             style={{ color: "var(--text-dark)" }}
             variants={textVariants}
           >
@@ -81,7 +81,7 @@ export const Header = () => {
           </motion.h1>
 
           <motion.p
-            className="text-sm sm:text-base lg:text-lg text-gray-800 leading-relaxed max-w-xl font-medium"
+            className="text-base sm:text-lg lg:text-xl text-gray-800 leading-relaxed max-w-xl font-medium"
             variants={textVariants}
           >
             Structured lessons, exercises and homework by topic and ELO level.
@@ -96,7 +96,7 @@ export const Header = () => {
             {/* Botón 1: Estilo Principal (Azul Profundo) */}
             <Link href="#about" className="w-full sm:w-auto">
               <motion.button
-                className="w-full sm:w-auto font-bold px-6 sm:px-8 py-3 sm:py-3.5 rounded-full flex items-center justify-center gap-2 group text-white shadow-lg text-sm sm:text-base uppercase tracking-wide cursor-pointer"
+                className="w-full sm:w-auto font-bold px-6 sm:px-8 py-3.5 sm:py-4 rounded-full flex items-center justify-center gap-2 group text-white shadow-lg text-sm sm:text-base uppercase tracking-wide cursor-pointer"
                 style={{
                   backgroundColor: "var(--color-blue)",
                 }}
@@ -111,7 +111,7 @@ export const Header = () => {
             {/* Botón 2: Estilo Secundario (Dorado) */}
             <Link href="/signup" className="w-full sm:w-auto">
               <motion.button
-                className="w-full sm:w-auto font-bold px-6 sm:px-8 py-3 sm:py-3.5 rounded-full flex items-center justify-center gap-2 text-white shadow-md text-sm sm:text-base uppercase tracking-wide cursor-pointer border border-[var(--color-border-custom)]"
+                className="w-full sm:w-auto font-bold px-6 sm:px-8 py-3.5 sm:py-4 rounded-full flex items-center justify-center gap-2 text-white shadow-md text-sm sm:text-base uppercase tracking-wide cursor-pointer border border-[var(--color-border-custom)]"
                 style={{
                   backgroundColor: "var(--color-gold)",
                 }}
@@ -129,18 +129,18 @@ export const Header = () => {
 
           {/* Reseñas / Trust metrics */}
           <motion.div
-            className="flex items-center gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-[#1A1510]/15 mt-1 sm:mt-2"
+            className="flex items-center gap-3 sm:gap-4 pt-4 sm:pt-5 border-t border-[#1A1510]/15 mt-2"
             variants={textVariants}
           >
             <div className="flex items-center gap-1 text-[#9C7548]">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current"
+                  className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current"
                 />
               ))}
             </div>
-            <span className="text-xs sm:text-sm text-gray-800 font-semibold">
+            <span className="text-sm sm:text-base text-gray-800 font-semibold">
               Trusted by coaches worldwide
             </span>
           </motion.div>
@@ -148,7 +148,7 @@ export const Header = () => {
 
         {/* ==================== 50% DERECHA: IMAGEN CON DIFUMINADO SUAVE ==================== */}
         <motion.div
-          className="lg:col-span-1 relative w-full h-[300px] sm:h-[400px] md:h-[480px] lg:h-full min-h-[300px] sm:min-h-[400px] lg:min-h-[650px] flex items-center mt-4 lg:mt-0"
+          className="lg:col-span-1 relative w-full h-[340px] sm:h-[440px] md:h-[520px] lg:h-full min-h-[340px] sm:min-h-[440px] lg:min-h-[650px] flex items-center mt-6 lg:mt-0"
           variants={imageVariants}
         >
           {/* Imagen de fondo */}
@@ -179,23 +179,28 @@ export const Header = () => {
               background: `linear-gradient(
                 to bottom, 
                 var(--bg-beige) 0%, 
-                var(--bg-beige-fade) 10%, 
-                transparent 25%
+                var(--bg-beige-fade) 12%, 
+                transparent 28%
               )`,
             }}
           />
 
-          {/* Badge flotante "Save hours" */}
+          {/* Badge flotante "Save hours" con animación de entrada y flotación */}
           <motion.div
-            className="absolute bottom-12 left-4 sm:bottom-16 sm:left-8 lg:bottom-20 lg:left-8 bg-white/95 backdrop-blur-md text-[#1A1510] p-2.5 sm:p-4 rounded-full w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 flex flex-col items-center justify-center text-center shadow-xl border border-[#9C7548]/30 z-20"
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-12 left-5 sm:bottom-16 sm:left-10 lg:bottom-20 lg:left-8 bg-white/95 backdrop-blur-md text-[#1A1510] p-3 sm:p-4 rounded-full w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 flex flex-col items-center justify-center text-center shadow-xl border border-[#9C7548]/30 z-20"
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: [0, -6, 0] }}
+            transition={{
+              y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+              opacity: { duration: 0.6, delay: 0.5 },
+              scale: { duration: 0.6, delay: 0.5 },
+            }}
           >
-            <Award className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-[#9C7548] mb-0.5" />
-            <span className="text-[11px] sm:text-xs md:text-sm font-extrabold leading-tight">
+            <Award className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-[#9C7548] mb-1" />
+            <span className="text-xs sm:text-sm md:text-base font-extrabold leading-tight">
               Save hours
             </span>
-            <span className="text-[8px] sm:text-[9px] md:text-xs text-gray-600">
+            <span className="text-[10px] sm:text-xs md:text-sm text-gray-600">
               every week
             </span>
           </motion.div>

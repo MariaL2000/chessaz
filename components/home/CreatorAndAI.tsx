@@ -32,7 +32,7 @@ export const CreatorAndAI = () => {
           {/* Imagen de fondo learn.PNG */}
           <div className="absolute inset-0 z-0 pointer-events-none">
             <img
-              src="/learn.PNG"
+              src="/learn.png"
               alt="Chess Creator Background"
               className="w-full h-full object-cover opacity-50 scale-105 transition-transform duration-1000 hover:scale-100"
             />
@@ -132,7 +132,7 @@ export const CreatorAndAI = () => {
             {/* Imagen ai.PNG totalmente visible y nítida */}
             <div className="absolute inset-0 z-0 pointer-events-none">
               <img
-                src="/ai.PNG"
+                src="/ai.png"
                 alt="AI Analysis Background"
                 className="w-full h-full object-cover opacity-60 scale-105 transition-transform duration-1000 group-hover:scale-100"
               />
@@ -218,7 +218,7 @@ export const CreatorAndAI = () => {
             {/* Imagen photo.PNG totalmente visible y nítida */}
             <div className="absolute inset-0 z-0 pointer-events-none">
               <img
-                src="/photo.PNG"
+                src="/photo.png"
                 alt="Photo to PGN Background"
                 className="w-full h-full object-cover opacity-60 scale-105 transition-transform duration-1000 group-hover:scale-100"
               />

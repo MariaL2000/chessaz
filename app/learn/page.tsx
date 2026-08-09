@@ -81,7 +81,7 @@ export default function LearnPage() {
           <div className="relative group overflow-hidden rounded-2xl border border-[var(--color-border-custom)] shadow-md">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/table.PNG"
+              src="/table.png"
               alt="Chessaz AI Analysis Dashboard"
               className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-500"
             />
@@ -93,7 +93,7 @@ export default function LearnPage() {
           <div className="order-2 lg:order-1 relative group overflow-hidden rounded-2xl border border-[var(--color-border-custom)] shadow-md">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/steps/step1.PNG"
+              src="/steps/step1.png"
               alt="Expert Chess Coaches"
               className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-500"
             />

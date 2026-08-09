@@ -24,8 +24,11 @@ export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
   const price = resource?.price ?? 0;
 
   const rawPreview = resource?.previewUrl || resource?.imageUrl || null;
+
   const initialPreview =
-    rawPreview && rawPreview.startsWith("http") ? rawPreview : null;
+    rawPreview && (rawPreview.startsWith("http") || rawPreview.startsWith("/"))
+      ? rawPreview
+      : null;
 
   const [imgSrc, setImgSrc] = useState<string | null>(initialPreview);
 
