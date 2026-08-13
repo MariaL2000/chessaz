@@ -67,7 +67,7 @@ export const BrowseLessons = () => {
         </div>
 
         <Link
-          href="/login"
+          href="/lessons"
           className="text-xs font-bold flex items-center gap-1.5 transition-all text-[var(--color-gold)] hover:text-[var(--color-gold-hover)] hover:underline shrink-0"
         >
           View all lessons <ArrowRight className="w-4 h-4" />
