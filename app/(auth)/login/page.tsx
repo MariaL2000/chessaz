@@ -47,8 +47,9 @@ export default function LoginPage() {
       return;
     }
 
-    // Actualizamos el estado global de Zustand para que la Navbar reaccione de inmediato
+    // Actualizamos el estado global incluyendo el id obligatorio
     setUser({
+      id: res.id || "",
       name: res.name || "",
       email: res.email || email,
       role: (res.role as UserRole) || "STUDENT",

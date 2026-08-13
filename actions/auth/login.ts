@@ -21,14 +21,15 @@ export async function loginUser(values: LoginInput) {
       redirect: false,
     });
 
-    // Buscamos el usuario para obtener sus datos para la store
+    // Buscamos el usuario incluyendo el id
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
-      select: { name: true, email: true, role: true, image: true },
+      select: { id: true, name: true, email: true, role: true, image: true },
     });
 
     return {
       ok: true,
+      id: user?.id,
       name: user?.name,
       email: user?.email,
       role: user?.role,
