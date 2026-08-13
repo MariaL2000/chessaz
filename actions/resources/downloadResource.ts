@@ -1,9 +1,9 @@
-// app/actions/resources/downloadResource.ts
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
-export async function downloadResourceAction(slug: string) {
+export async function downloadResourceAction(slug: string, userId?: string) {
   try {
     const resource = await prisma.resource.findUnique({
       where: { slug },
@@ -22,7 +22,23 @@ export async function downloadResourceAction(slug: string) {
     }
 
     if (resource.price === 0) {
-      // Aseguramos que la URL comience con https para evitar bloqueos de seguridad del navegador
+      // Registrar la descarga en la base de datos si el usuario está autenticado
+      if (userId) {
+        try {
+          await prisma.download.create({
+            data: {
+              userId,
+              resourceId: resource.id,
+              pricePaid: 0,
+              isFree: true,
+            },
+          });
+          revalidatePath("/dashboard");
+        } catch (dbError) {
+          console.error("Error saving download record:", dbError);
+        }
+      }
+
       let secureUrl = resource.fileUrl;
       if (secureUrl.startsWith("http://")) {
         secureUrl = secureUrl.replace("http://", "https://");

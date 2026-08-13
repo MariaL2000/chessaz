@@ -1,21 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useTransition } from "react";
 import { updateUserProfile } from "@/actions/profile/update-profile";
+import { useAuthStore } from "@/store/useAuthStore";
 import { Loader2, Upload, User as UserIcon } from "lucide-react";
 
-interface ProfileSettingsProps {
-  user: {
-    id: string;
-    name?: string;
-    image?: string | null;
-    email?: string;
-    role?: string;
-  };
-}
-
-export default function ProfileSettings({ user }: ProfileSettingsProps) {
+export default function ProfileSettings() {
+  const { user, updateUser } = useAuthStore();
   const [isPending, startTransition] = useTransition();
+
   const [name, setName] = useState(user?.name || "");
   const [imageBase64, setImageBase64] = useState<string>("");
   const [preview, setPreview] = useState(user?.image || "");
@@ -41,9 +35,12 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
     e.preventDefault();
     setMessage(null);
 
+    if (!user?.id) {
+      setMessage({ type: "error", text: "Usuario no autenticado." });
+      return;
+    }
+
     startTransition(async () => {
-      // 1. SOLUCIÓN TS7022: Tipado explícito del resultado de la Server Action
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result: { ok: boolean; message: string; user?: any } =
         await updateUserProfile({
           userId: user.id,
@@ -53,6 +50,12 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
 
       if (result.ok) {
         setMessage({ type: "success", text: result.message });
+
+        // Actualizamos el estado global para reflejar los cambios en la Navbar, Sidebar y vistas
+        updateUser({
+          name: name,
+          image: result.user?.image ?? preview,
+        });
       } else {
         setMessage({ type: "error", text: result.message });
       }
@@ -122,7 +125,7 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
           />
         </div>
 
-        {/* Botón de Guardar usando el color Azul Institucional */}
+        {/* Botón de Guardar */}
         <button
           type="submit"
           disabled={isPending}

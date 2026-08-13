@@ -1,30 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useTransition, ChangeEvent, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   CheckCircle2,
   AlertCircle,
-  TrendingUp,
-  FileCheck,
-  DollarSign,
   Menu,
   BookOpen,
+  Clock,
+  Download,
 } from "lucide-react";
 
-import { updateUserProfile } from "@/actions/profile/update-profile";
 import ProfileSettings from "@/components/dashboard/ProfileSettings";
 import { UploadResourceForm } from "@/components/dashboard/UploadResourceForm";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { DashboardResourceSearchBar } from "@/components/dashboard/DashboardResourceSearchBar";
-import { ResourceDetailCard } from "@/components/resources/ResourceDetailCard";
+import { DashboardResourceCard } from "@/components/dashboard/DashboardResourceCard";
 import { useResourceStore } from "@/store/resource-store";
+import { useAuthStore } from "@/store/useAuthStore";
 import type { ResourceDTO } from "@/types/resource";
+import {
+  getUserDownloads,
+  DownloadItemDTO,
+} from "@/actions/resources/get-user-purchases";
 
 interface TeacherDashboardProps {
   initialUser?: {
     id: string;
-    name: string;
+    name: string | null;
     email?: string;
     image?: string | null;
     role: string;
@@ -39,10 +42,31 @@ export default function TeacherDashboard({
   initialTeacherResources = [],
 }: TeacherDashboardProps) {
   const [activeTab, setActiveTab] = useState<string>("market");
-  const [isPending, startTransition] = useTransition();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [updatedAvatar, setUpdatedAvatar] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+
+  // Nuevo estado para controlar si se acaba de crear un recurso con éxito
+  const [showPendingBanner, setShowPendingBanner] = useState(false);
+
+  // Estados para la pestaña de descargas del profesor (My Downloads)
+  const [downloads, setDownloads] = useState<DownloadItemDTO[]>([]);
+  const [isLoadingDownloads, setIsLoadingDownloads] = useState(false);
+
+  const { user, setUser } = useAuthStore();
+
+  useEffect(() => {
+    if (initialUser) {
+      setUser({
+        id: initialUser.id,
+        name: initialUser.name,
+        email: initialUser.email || "",
+        role: initialUser.role as "TEACHER" | "STUDENT" | "ADMIN",
+        image: initialUser.image || null,
+      });
+    }
+  }, [initialUser, setUser]);
+
+  const userId = user?.id || initialUser?.id || "";
 
   const {
     recentResources,
@@ -51,24 +75,41 @@ export default function TeacherDashboard({
     fetchTeacherResources,
   } = useResourceStore();
 
-  const user = {
-    id: initialUser?.id || "",
-    name: initialUser?.name || "User",
-    email: initialUser?.email || "",
-    image: updatedAvatar || initialUser?.image || "",
-    role: (initialUser?.role || "TEACHER") as
-      | "STUDENT"
-      | "TEACHER"
-      | "ADMIN"
-      | "guest",
-  };
-
   useEffect(() => {
     fetchRecentResources(50);
-    if (user.id) {
-      fetchTeacherResources(user.id);
+    if (userId) {
+      fetchTeacherResources(userId);
     }
-  }, [fetchRecentResources, fetchTeacherResources, user.id]);
+  }, [fetchRecentResources, fetchTeacherResources, userId]);
+
+  // Cargar las descargas del profesor cuando hace clic en la pestaña "library"
+  useEffect(() => {
+    if (activeTab === "library" && userId) {
+      let isMounted = true;
+
+      const fetchDownloads = async () => {
+        setIsLoadingDownloads(true);
+        try {
+          const res = await getUserDownloads(userId, "TEACHER");
+          if (res.ok && isMounted) {
+            setDownloads(res.downloads);
+          }
+        } catch (error) {
+          console.error("Error loading teacher downloads:", error);
+        } finally {
+          if (isMounted) {
+            setIsLoadingDownloads(false);
+          }
+        }
+      };
+
+      fetchDownloads();
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [activeTab, userId]);
 
   const allResources =
     recentResources.length > 0 ? recentResources : initialMarketResources;
@@ -76,62 +117,19 @@ export default function TeacherDashboard({
   const currentTeacherResources =
     teacherResources.length > 0 ? teacherResources : initialTeacherResources;
 
-  const [toast, setToast] = useState<{
+  const [toast] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
-  const handleAvatarUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setToast({
-        type: "error",
-        message: "Please select a valid image file.",
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64Image = reader.result as string;
-
-      startTransition(async () => {
-        const res = await updateUserProfile({
-          userId: user.id,
-          imageBase64: base64Image,
-        });
-
-        if (res.ok && res.user) {
-          setUpdatedAvatar(res.user.image || null);
-          setToast({
-            type: "success",
-            message: "Profile picture successfully updated!",
-          });
-        } else {
-          setToast({
-            type: "error",
-            message: res.message || "Error updating picture.",
-          });
-        }
-
-        setTimeout(() => setToast(null), 4000);
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-
+  // Declaración correcta de las categorías para evitar el error de referencia
   const categories = ["ALL", "TACTICS", "OPENINGS", "ENDGAME", "STRATEGY"];
 
   return (
     <div className="flex w-full min-h-[calc(100vh-4rem)] bg-[var(--color-bg-beige)] text-[var(--color-text-main)] relative box-border mt-16">
       <DashboardSidebar
-        user={user}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        isPending={isPending}
-        handleAvatarUpload={handleAvatarUpload}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
       />
@@ -179,36 +177,114 @@ export default function TeacherDashboard({
                 {activeTab === "uploads" && "My Published Classes & Resources"}
                 {activeTab === "wallet" && "Earnings Dashboard"}
               </h2>
-              <p className="text-sm sm:text-base text-[var(--color-text-muted)] font-medium">
-                {activeTab === "market" &&
-                  "Explore and acquire educational material created by other instructors fetched directly from the database."}
-                {activeTab === "profile" &&
-                  "Manage your personal information and account settings."}
-                {activeTab === "upload-new" &&
-                  "Publish your professional PGN files, courses, and PDFs."}
-                {activeTab === "library" &&
-                  "Acquired resources ready for study."}
-                {activeTab === "uploads" &&
-                  "Manage the PGN guides and PDFs you have put up for sale."}
-                {activeTab === "wallet" &&
-                  "Monitor your earnings and sales metrics."}
-              </p>
             </div>
             {activeTab === "market" && <DashboardResourceSearchBar />}
           </div>
 
           {activeTab === "profile" && (
             <div className="max-w-4xl space-y-6">
-              <ProfileSettings user={user} />
+              <ProfileSettings />
             </div>
           )}
 
           {activeTab === "upload-new" && (
             <div className="max-w-3xl space-y-6">
+              {/* 
+                TODO (Platform Commission Integration):
+                When implementing the server action or payment webhook (Stripe/Checkout) that processes 
+                the sale of a teacher's resource, calculate the earnings split as follows:
+                
+                const adminFee = resource.price * 0.05; // Admin keeps 5% commission
+                const teacherEarnings = resource.price - adminFee; // Teacher gets 95%
+                
+                Save these computed amounts inside your database transaction (e.g., in Purchase or Wallet transaction records) 
+                so the admin wallet reflects the 5% cut and the teacher's earnings dashboard reflects the remainder.
+              */}
               <UploadResourceForm
-                userId={user.id}
-                onSuccess={() => setActiveTab("uploads")}
+                userId={userId}
+                onSuccess={() => {
+                  setShowPendingBanner(true);
+                  setActiveTab("uploads");
+                }}
               />
+            </div>
+          )}
+
+          {activeTab === "library" && (
+            <div className="space-y-6">
+              {isLoadingDownloads ? (
+                <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)]">
+                  <p className="text-sm text-[var(--color-text-muted)]">
+                    Loading your downloads...
+                  </p>
+                </div>
+              ) : downloads.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-3">
+                  <Download className="w-12 h-12 mx-auto text-[var(--color-text-muted)] opacity-50" />
+                  <p className="text-lg font-semibold text-[var(--color-text-main)]">
+                    You haven&apos;t downloaded or acquired any resources yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-2xl overflow-hidden shadow-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-[var(--color-border-custom)] bg-[var(--color-gold-light)]/30 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                          <th className="p-4">Resource</th>
+                          <th className="p-4">Category</th>
+                          <th className="p-4">Price Type</th>
+                          <th className="p-4">Date</th>
+                          <th className="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--color-border-custom)] text-sm">
+                        {downloads.map((item) => (
+                          <tr
+                            key={item.id}
+                            className="hover:bg-[var(--color-gold-light)]/10 transition-colors"
+                          >
+                            <td className="p-4 font-semibold text-[var(--color-text-main)]">
+                              {item.resource.title}
+                            </td>
+                            <td className="p-4">
+                              <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded-md bg-[var(--color-gold-light)] text-[var(--color-gold)]">
+                                {item.resource.category}
+                              </span>
+                            </td>
+                            <td className="p-4 font-bold">
+                              {item.isFree ? (
+                                <span className="text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded-lg text-xs">
+                                  FREE
+                                </span>
+                              ) : (
+                                <span className="text-[var(--color-gold)]">
+                                  ${item.pricePaid.toFixed(2)}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4 text-xs text-[var(--color-text-muted)]">
+                              {new Date(item.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="p-4 text-right">
+                              {/* TODO: Verify payment gateway integration or checkout session status here if the resource is paid (price > 0) before allowing file download/access */}
+                              <a
+                                href={item.resource.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-gold)] text-white text-xs font-bold shadow-xs hover:opacity-90 transition-opacity"
+                              >
+                                <Download className="w-3.5 h-3.5" /> Download
+                                File
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -217,7 +293,7 @@ export default function TeacherDashboard({
               <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-[var(--color-bg-card)] p-4 rounded-2xl border border-[var(--color-border-custom)]">
                 <div className="flex flex-wrap items-center gap-2 w-full">
                   <span className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mr-2">
-                    Categoría:
+                    Category:
                   </span>
                   {categories.map((cat) => (
                     <button
@@ -246,9 +322,6 @@ export default function TeacherDashboard({
                   <p className="text-lg font-semibold text-[var(--color-text-main)]">
                     No resources available in the marketplace yet.
                   </p>
-                  <p className="text-sm text-[var(--color-text-muted)]">
-                    Published resources will appear here automatically.
-                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
@@ -260,10 +333,9 @@ export default function TeacherDashboard({
                         r.category === selectedCategory,
                     )
                     .map((resource) => (
-                      <ResourceDetailCard
+                      <DashboardResourceCard
                         key={resource.id}
                         resource={resource}
-                        userRole={user.role}
                       />
                     ))}
                 </div>
@@ -271,117 +343,61 @@ export default function TeacherDashboard({
             </div>
           )}
 
-          {activeTab === "library" && (
-            <div className="space-y-6">
-              <p className="text-sm sm:text-base text-[var(--color-text-muted)] font-medium">
-                Acquired resources ready for study.
-              </p>
-            </div>
-          )}
-
           {activeTab === "uploads" && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-[var(--color-bg-card)] p-4 rounded-2xl border border-[var(--color-border-custom)]">
-                <div className="flex flex-wrap items-center gap-2 w-full">
-                  <span className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mr-2">
-                    Categoría:
-                  </span>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        selectedCategory === cat
-                          ? "bg-[var(--color-gold)] text-white shadow-sm"
-                          : "bg-[var(--color-gold-light)] text-[var(--color-text-main)] hover:bg-[var(--color-gold)]/20"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {currentTeacherResources.filter(
-                (r) =>
-                  selectedCategory === "ALL" || r.category === selectedCategory,
-              ).length === 0 ? (
-                <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-3">
-                  <BookOpen className="w-12 h-12 mx-auto text-[var(--color-text-muted)] opacity-50" />
-                  <p className="text-lg font-semibold text-[var(--color-text-main)]">
-                    No has publicado recursos todavía o están pendientes de
-                    aprobación.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-                  {currentTeacherResources
-                    .filter(
-                      (r) =>
-                        selectedCategory === "ALL" ||
-                        r.category === selectedCategory,
-                    )
-                    .map((resource) => (
-                      <div key={resource.id} className="relative flex flex-col">
-                        <ResourceDetailCard
-                          resource={resource}
-                          userRole={user.role}
-                        />
-                        <div className="mt-2 flex items-center justify-between px-2 py-1 bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-xl text-xs font-semibold">
-                          <span className="text-[var(--color-text-muted)]">
-                            Estado:
-                          </span>
-                          <span
-                            className={
-                              resource.isPublished
-                                ? "text-emerald-600 font-bold"
-                                : "text-amber-600 font-bold"
-                            }
-                          >
-                            {resource.isPublished
-                              ? "Aprobado / Publicado"
-                              : "Pendiente de revisión"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+              {showPendingBanner && (
+                <div className="flex items-center justify-between p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-800 animate-fadeIn">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-500/20 rounded-xl">
+                      <Clock className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm">
+                        Resource submitted successfully!
+                      </h4>
+                      <p className="text-xs text-amber-700/80">
+                        Your resource is currently pending admin review before
+                        appearing in the public marketplace.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowPendingBanner(false)}
+                    className="text-xs font-semibold text-amber-700 hover:text-amber-900 px-2 py-1"
+                  >
+                    Dismiss
+                  </button>
                 </div>
               )}
-            </div>
-          )}
 
-          {activeTab === "wallet" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="p-6 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-2 shadow-xs">
-                  <div className="flex items-center justify-between text-[var(--color-text-muted)]">
-                    <span className="font-medium text-sm">Total Balance</span>
-                    <DollarSign className="w-5 h-5 text-[var(--color-gold)]" />
-                  </div>
-                  <p className="text-3xl font-extrabold text-[var(--color-text-main)]">
-                    $0.00 USD
-                  </p>
-                </div>
-                <div className="p-6 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-2 shadow-xs">
-                  <div className="flex items-center justify-between text-[var(--color-text-muted)]">
-                    <span className="font-medium text-sm">Completed Sales</span>
-                    <FileCheck className="w-5 h-5 text-[var(--color-gold)]" />
-                  </div>
-                  <p className="text-3xl font-extrabold text-[var(--color-text-main)]">
-                    0
-                  </p>
-                </div>
-                <div className="p-6 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-2 shadow-xs">
-                  <div className="flex items-center justify-between text-[var(--color-text-muted)]">
-                    <span className="font-medium text-sm">
-                      Growth This Month
-                    </span>
-                    <TrendingUp className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <p className="text-3xl font-extrabold text-[var(--color-text-main)]">
-                    0%
-                  </p>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+                {currentTeacherResources
+                  .filter(
+                    (r) =>
+                      selectedCategory === "ALL" ||
+                      r.category === selectedCategory,
+                  )
+                  .map((resource) => (
+                    <div key={resource.id} className="relative flex flex-col">
+                      <DashboardResourceCard resource={resource} />
+                      <div className="mt-2 flex items-center justify-between px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-xl text-xs font-semibold">
+                        <span className="text-[var(--color-text-muted)]">
+                          Status:
+                        </span>
+                        <span
+                          className={
+                            resource.isPublished
+                              ? "text-emerald-600 font-bold"
+                              : "text-amber-600 font-bold"
+                          }
+                        >
+                          {resource.isPublished
+                            ? "Approved / Published"
+                            : "Pending admin review"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           )}

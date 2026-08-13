@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ShoppingCart, Download, Loader2 } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { downloadResourceAction } from "@/actions/resources/downloadResource";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface ResourceActionsProps {
   slug: string;
@@ -17,6 +18,7 @@ export const ResourceActions: React.FC<ResourceActionsProps> = ({
   userRole = "guest",
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuthStore(); // Obtenemos el usuario global para extraer su ID
 
   const isAdmin = userRole === "ADMIN";
   const isFree = price === 0;
@@ -26,7 +28,8 @@ export const ResourceActions: React.FC<ResourceActionsProps> = ({
     if (canDownload) {
       try {
         setIsLoading(true);
-        const result = await downloadResourceAction(slug);
+        // Enviamos el slug y el id del usuario actual a la server action
+        const result = await downloadResourceAction(slug, user?.id);
 
         if (result.ok && result.fileUrl) {
           const link = document.createElement("a");
@@ -50,25 +53,6 @@ export const ResourceActions: React.FC<ResourceActionsProps> = ({
       console.log(`Redirecting to checkout for resource ${slug}...`);
     }
   };
-
-  // ==========================================
-  // TODO: CAMBIAR ESTA SECCIÓN PARA EL PAGO
-  // ==========================================
-  // Aquí debes reemplazar este console.log por:
-  // 1. Llamar a tu Server Action o API Route de pago (ej. createCheckoutSession(slug)).
-  // 2. Obtener la URL de redirección que te devuelva la pasarela (Stripe/PayPal).
-  // 3. Redirigir al usuario: window.location.href = checkoutUrl;
-
-  // Ejemplo futuro de reemplazo:
-  // try {
-  //   setIsLoading(true);
-  //   const { url } = await createStripeCheckoutSession(slug);
-  //   if (url) window.location.href = url;
-  // } catch (error) {
-  //   console.error("Checkout error:", error);
-  // } finally {
-  //   setIsLoading(false);
-  // }
 
   return (
     <div className="flex items-center gap-3">

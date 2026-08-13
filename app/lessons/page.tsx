@@ -1,19 +1,67 @@
 import React from "react";
 import { getFilteredResources } from "@/actions/resources/getResourceActions";
 import LessonsClient from "@/components/lessons/LessonsClient";
-import { ResourceDTO } from "@/types/resource"; // <--- Importa el tipo DTO
+import { ResourceDTO } from "@/types/resource";
 import { AlertCircle } from "lucide-react";
+import { ChessCategory, ResourceType } from "@/app/generated/prisma/client";
 
-export default async function LessonsPage() {
-  // Tipado explícito para evitar que TypeScript infiera 'any[]'
-  let initialResources: ResourceDTO[] = [];
+interface LessonsPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function LessonsPage({ searchParams }: LessonsPageProps) {
+  const resolvedParams = await searchParams;
+
+  // Extraer y formatear los parámetros de la URL
+  const page = resolvedParams.page ? Number(resolvedParams.page) : 1;
+  const query =
+    typeof resolvedParams.query === "string" ? resolvedParams.query : undefined;
+
+  const categoryParam = resolvedParams.category;
+  const category =
+    typeof categoryParam === "string" && categoryParam !== "ALL"
+      ? (categoryParam as ChessCategory)
+      : undefined;
+
+  const typeParam = resolvedParams.type;
+  const type =
+    typeof typeParam === "string" && typeParam !== "ALL"
+      ? (typeParam as ResourceType)
+      : undefined;
+
+  const minElo = resolvedParams.minElo
+    ? Number(resolvedParams.minElo)
+    : undefined;
+  const maxElo = resolvedParams.maxElo
+    ? Number(resolvedParams.maxElo)
+    : undefined;
+  const hasHomework = resolvedParams.hasHomework === "true";
+  const isFree = resolvedParams.isFree === "true";
+  const maxPrice = resolvedParams.maxPrice
+    ? Number(resolvedParams.maxPrice)
+    : undefined;
+
+  let resources: ResourceDTO[] = [];
+  let totalPages = 1;
   let errorMessage: string | null = null;
 
   try {
-    const response = await getFilteredResources({ minElo: 0, maxElo: 3000 });
+    const response = await getFilteredResources({
+      query,
+      category,
+      type,
+      minElo,
+      maxElo,
+      hasHomework,
+      isFree,
+      maxPrice,
+      page,
+      limit: 9, // 9 lecciones por página estilo tienda
+    });
 
-    if (response.ok && response.resources) {
-      initialResources = response.resources;
+    if (response.ok) {
+      resources = response.resources;
+      totalPages = response.totalPages;
     } else {
       errorMessage = "No se pudieron cargar los recursos en este momento.";
     }
@@ -39,5 +87,5 @@ export default async function LessonsPage() {
     );
   }
 
-  return <LessonsClient initialResources={initialResources} />;
+  return <LessonsClient resources={resources} totalPages={totalPages} />;
 }

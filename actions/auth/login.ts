@@ -21,13 +21,19 @@ export async function loginUser(values: LoginInput) {
       redirect: false,
     });
 
-    // Buscamos el usuario para obtener su rol tras autenticarlo
+    // Buscamos el usuario para obtener sus datos para la store
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
-      select: { role: true },
+      select: { name: true, email: true, role: true, image: true },
     });
 
-    return { ok: true, role: user?.role };
+    return {
+      ok: true,
+      name: user?.name,
+      email: user?.email,
+      role: user?.role,
+      image: user?.image,
+    };
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {

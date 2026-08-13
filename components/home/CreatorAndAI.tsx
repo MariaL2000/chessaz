@@ -172,10 +172,10 @@ export const CreatorAndAI = () => {
 
               <ul className="space-y-3.5 text-sm mb-8 font-semibold text-zinc-800 dark:text-zinc-200">
                 {[
-                  "Upload any standard PGN file or game database",
-                  "Instant evaluation and deep engine breakdown",
-                  "Pinpoint critical blunders and missed opportunities",
-                  "Personalized training drills based on your style",
+                  "Explore the finest curated chess lessons organized by skill level",
+                  "Choose from master-led courses, tactical guides, and free resources",
+                  "Filter by ELO ratings, categories, homework, and pricing",
+                  "Boost your strategic vision and elevate your game at your own pace",
                 ].map((item, idx) => (
                   <li
                     key={idx}
@@ -237,7 +237,7 @@ export const CreatorAndAI = () => {
                   className="text-[11px] uppercase font-bold tracking-widest px-3 py-1 rounded-md bg-white/95 dark:bg-black/60 inline-block mb-2 shadow-xs"
                   style={{ color: "var(--color-gold)" }}
                 >
-                  Próximamente • Powered by AI
+                  Comming soon • Powered by AI
                 </span>
                 <h4
                   className="text-lg font-extrabold tracking-tight"

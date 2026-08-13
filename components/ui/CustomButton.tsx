@@ -4,7 +4,7 @@ interface CustomButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
   variant?: "gold" | "blue" | "outline";
   children: React.ReactNode;
 }
-
+//button de descarga del recurso
 export const CustomButton: React.FC<CustomButtonProps> = ({
   variant = "gold",
   children,

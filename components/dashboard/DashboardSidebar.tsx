@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { ChangeEvent } from "react";
 import Image from "next/image";
 import {
   BookOpen,
@@ -10,44 +10,29 @@ import {
   Library,
   LayoutDashboard,
   UserCircle,
-  Camera,
-  Loader2,
   X,
   Clock,
-  Globe,
 } from "lucide-react";
 import { LogoutButton } from "@/components/ui/LogoutButton";
-
-interface User {
-  id: string;
-  name: string;
-  email?: string;
-  image?: string | null;
-  role: string;
-}
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface DashboardSidebarProps {
-  user: User;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  isPending: boolean;
-  handleAvatarUpload: (e: ChangeEvent<HTMLInputElement>) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
 
 export default function DashboardSidebar({
-  user,
   activeTab,
   setActiveTab,
-  isPending,
-  handleAvatarUpload,
   isOpen,
   setIsOpen,
 }: DashboardSidebarProps) {
-  // Definición de menús según el rol del usuario
+  const { user } = useAuthStore();
+  const role = user?.role?.toUpperCase();
+
   const getNavItems = () => {
-    const role = user.role?.toUpperCase();
     if (role === "ADMIN") {
       return [
         {
@@ -63,16 +48,13 @@ export default function DashboardSidebar({
               icon: Clock,
             },
             {
-              id: "community-resources",
-              label: "Community Resources",
-              icon: Globe,
-            },
-            {
-              id: "upload-resource", // <-- ¡Añadido aquí para que aparezca en el menú!
+              id: "upload-resource",
               label: "Upload Resource",
               icon: UploadCloud,
             },
             { id: "market", label: "Marketplace", icon: ShoppingBag },
+            { id: "library", label: "Downloads", icon: Library },
+            { id: "wallet", label: "Earnings", icon: Wallet },
           ],
         },
       ];
@@ -94,7 +76,7 @@ export default function DashboardSidebar({
       ];
     }
 
-    // Por defecto: TEACHER / CREATOR
+    // TEACHER / CREATOR (Incluye Earnings / wallet)
     return [
       {
         section: "My Account",
@@ -121,7 +103,6 @@ export default function DashboardSidebar({
   const navItems = getNavItems();
 
   const getPanelTitle = () => {
-    const role = user.role?.toUpperCase();
     if (role === "ADMIN") return "Admin Panel";
     if (role === "STUDENT") return "Student Panel";
     return "Teacher Panel";
@@ -129,7 +110,6 @@ export default function DashboardSidebar({
 
   return (
     <>
-      {/* Backdrop para dispositivos móviles */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
@@ -143,7 +123,6 @@ export default function DashboardSidebar({
         }`}
       >
         <div className="space-y-6 overflow-y-auto pr-1">
-          {/* Header & Close Button for Mobile */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-[var(--color-gold-light)] text-[var(--color-gold)] border border-[var(--color-gold)]/20">
@@ -167,13 +146,12 @@ export default function DashboardSidebar({
             </button>
           </div>
 
-          {/* User Profile Card */}
-          <div className="p-4 rounded-2xl bg-[var(--color-gold-light)]/50 border border-[var(--color-border-custom)] flex items-center gap-3 relative group">
+          <div className="p-4 rounded-2xl bg-[var(--color-gold-light)]/50 border border-[var(--color-border-custom)] flex items-center gap-3 relative">
             <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[var(--color-gold)] bg-[var(--color-bg-card)] flex items-center justify-center shrink-0 shadow-xs">
-              {user.image ? (
+              {user?.image ? (
                 <Image
                   src={user.image}
-                  alt={user.name}
+                  alt={user.name || "User"}
                   fill
                   className="object-cover"
                   unoptimized
@@ -181,42 +159,21 @@ export default function DashboardSidebar({
               ) : (
                 <UserCircle className="w-10 h-10 text-[var(--color-text-muted)]" />
               )}
-
-              <label
-                htmlFor="sidebar-avatar-upload"
-                className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
-                title="Change profile photo"
-              >
-                {isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Camera className="w-5 h-5" />
-                )}
-              </label>
-              <input
-                id="sidebar-avatar-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-                disabled={isPending}
-              />
             </div>
 
             <div className="overflow-hidden">
               <h3 className="font-semibold text-sm truncate text-[var(--color-text-main)]">
-                {user.name}
+                {user?.name || "Usuario"}
               </h3>
               <p className="text-xs text-[var(--color-text-muted)] truncate font-medium">
-                {user.email}
+                {user?.email}
               </p>
               <span className="inline-block mt-1 text-[10px] uppercase font-bold text-[var(--color-gold)] bg-[var(--color-gold-light)] px-2 py-0.5 rounded-full border border-[var(--color-gold)]/20">
-                {user.role}
+                {user?.role}
               </span>
             </div>
           </div>
 
-          {/* Navigation Menu */}
           <nav className="space-y-6">
             {navItems.map((group, idx) => (
               <div key={idx}>
@@ -250,9 +207,8 @@ export default function DashboardSidebar({
           </nav>
         </div>
 
-        {/* Sidebar Footer */}
         <div className="pt-4 border-t border-[var(--color-border-custom)] space-y-3">
-          <LogoutButton className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl border border-rose-500/30 text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer" />
+          <LogoutButton />
           <div className="text-[10px] text-[var(--color-text-muted)] text-center font-medium">
             Chessaz Dashboard &copy; {new Date().getFullYear()}
           </div>

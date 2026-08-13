@@ -14,6 +14,8 @@ export interface ResourceFilterOptions {
   hasHomework?: boolean;
   maxPrice?: number;
   isFree?: boolean;
+  page?: number; // <--- Página actual para la paginación
+  limit?: number; // <--- Cantidad de elementos por página
 }
 
 /**
@@ -133,7 +135,7 @@ export async function getResourceByTeacherId(teacherId: string) {
 }
 
 /**
- * Obtiene recursos filtrados por múltiples criterios de forma optimizada y dinámica
+ * Obtiene recursos filtrados por múltiples criterios de forma optimizada, dinámica y con paginación
  */
 export const getFilteredResources = async (filters: ResourceFilterOptions) => {
   try {
@@ -146,6 +148,8 @@ export const getFilteredResources = async (filters: ResourceFilterOptions) => {
       hasHomework,
       maxPrice,
       isFree,
+      page = 1,
+      limit = 9, // Por defecto 9 elementos por página estilo tienda
     } = filters;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -186,26 +190,44 @@ export const getFilteredResources = async (filters: ResourceFilterOptions) => {
       andConditions.push({ price: { lte: maxPrice } });
     }
 
-    const resources = await prisma.resource.findMany({
-      where: {
-        isPublished: true,
-        AND: andConditions,
-      },
-      include: {
-        reviews: { select: { rating: true } },
-        teacher: {
-          include: {
-            user: { select: { name: true, image: true, role: true } },
+    const whereClause = {
+      isPublished: true,
+      AND: andConditions,
+    };
+
+    // Calcular la paginación de forma segura
+    const currentPage = Number(page) < 1 ? 1 : Number(page);
+    const skip = (currentPage - 1) * limit;
+
+    // Consultar en paralelo la cantidad total y los recursos de la página actual
+    const [totalCount, resources] = await Promise.all([
+      prisma.resource.count({ where: whereClause }),
+      prisma.resource.findMany({
+        where: whereClause,
+        take: limit,
+        skip: skip,
+        include: {
+          reviews: { select: { rating: true } },
+          teacher: {
+            include: {
+              user: { select: { name: true, image: true, role: true } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
 
-    return { ok: true, resources: resources.map(mapResourceToDTO) };
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      ok: true,
+      resources: resources.map(mapResourceToDTO),
+      totalPages: totalPages > 0 ? totalPages : 1,
+    };
   } catch (error) {
     console.error("Error al filtrar recursos:", error);
-    return { ok: false, resources: [] };
+    return { ok: false, resources: [], totalPages: 1 };
   }
 };
 

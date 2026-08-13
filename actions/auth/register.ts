@@ -32,12 +32,22 @@ export async function registerUser(values: RegisterInput) {
         role,
       },
       select: {
-        id: true,
+        id: true, // <-- Incluido el id requerido por el store
+        name: true,
+        email: true,
         role: true,
+        image: true,
       },
     });
 
-    return { ok: true, role: newUser.role };
+    return {
+      ok: true,
+      id: newUser.id, // <-- Retornado hacia el cliente
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      image: newUser.image,
+    };
   } catch (error) {
     return { ok: false, error: "Could not create user account" };
   }

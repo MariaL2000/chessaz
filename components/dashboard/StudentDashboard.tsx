@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useTransition, ChangeEvent, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   CheckCircle2,
   AlertCircle,
@@ -10,19 +10,22 @@ import {
   Download,
 } from "lucide-react";
 
-import { updateUserProfile } from "@/actions/profile/update-profile";
-import { getUserPurchases } from "@/actions/resources/get-user-purchases";
+import {
+  getUserDownloads,
+  type DownloadItemDTO,
+} from "@/actions/resources/get-user-purchases";
 import ProfileSettings from "@/components/dashboard/ProfileSettings";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { DashboardResourceSearchBar } from "@/components/dashboard/DashboardResourceSearchBar";
 import { ResourceDetailCard } from "@/components/resources/ResourceDetailCard";
 import { useResourceStore } from "@/store/resource-store";
+import { useAuthStore } from "@/store/useAuthStore";
 import type { ResourceDTO } from "@/types/resource";
 
-interface StudentDashboardProps {
+interface AdminDashboardProps {
   initialUser?: {
     id: string;
-    name: string;
+    name: string | null;
     email?: string;
     image?: string | null;
     role: string;
@@ -30,118 +33,82 @@ interface StudentDashboardProps {
   initialMarketResources?: ResourceDTO[];
 }
 
-export default function StudentDashboard({
+export default function AdminDashboard({
   initialUser,
   initialMarketResources = [],
-}: StudentDashboardProps) {
+}: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<string>("market");
-  const [isPending, startTransition] = useTransition();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [updatedAvatar, setUpdatedAvatar] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
 
-  const [purchasedResources, setPurchasedResources] = useState<ResourceDTO[]>(
-    [],
-  );
-  const [isLoadingPurchases, setIsLoadingPurchases] = useState<boolean>(false);
+  const [downloads, setDownloads] = useState<DownloadItemDTO[]>([]);
+  const [isLoadingDownloads, setIsLoadingDownloads] = useState<boolean>(false);
 
   const { recentResources, fetchRecentResources } = useResourceStore();
+  const { user, setUser } = useAuthStore();
 
-  const user = {
-    id: initialUser?.id || "",
-    name: initialUser?.name || "User",
-    email: initialUser?.email || "",
-    image: updatedAvatar || initialUser?.image || "",
-    role: (initialUser?.role || "STUDENT") as
-      | "STUDENT"
-      | "TEACHER"
-      | "ADMIN"
-      | "guest",
-  };
+  useEffect(() => {
+    if (initialUser) {
+      setUser({
+        id: initialUser.id,
+        name: initialUser.name,
+        email: initialUser.email || "",
+        role: initialUser.role as "TEACHER" | "STUDENT" | "ADMIN",
+        image: initialUser.image || null,
+      });
+    }
+  }, [initialUser, setUser]);
+
+  const userId = user?.id || initialUser?.id || "";
+  const userRole = user?.role || initialUser?.role || "ADMIN";
 
   useEffect(() => {
     fetchRecentResources(50);
   }, [fetchRecentResources]);
 
-  // Función controlada para cambiar de pestaña y cargar datos bajo demanda
-  const handleTabChange = async (tab: string) => {
-    setActiveTab(tab);
-    setIsSidebarOpen(false);
-
-    if (tab === "library" && user.id && purchasedResources.length === 0) {
-      setIsLoadingPurchases(true);
-      try {
-        const res = await getUserPurchases(user.id);
-        if (res.ok) {
-          setPurchasedResources(res.resources);
+  // Cargar las descargas (o compras) cuando hace clic en la pestaña "library"
+  useEffect(() => {
+    if (activeTab === "library" && downloads.length === 0) {
+      let isMounted = true;
+      const fetchDownloads = async () => {
+        setIsLoadingDownloads(true);
+        try {
+          const res = await getUserDownloads(userId, userRole);
+          if (res.ok && isMounted) {
+            setDownloads(res.downloads);
+          }
+        } catch (error) {
+          console.error("Error loading downloads:", error);
+        } finally {
+          if (isMounted) {
+            setIsLoadingDownloads(false);
+          }
         }
-      } catch (error) {
-        console.error("Error loading purchases:", error);
-      } finally {
-        setIsLoadingPurchases(false);
-      }
+      };
+
+      fetchDownloads();
+
+      return () => {
+        isMounted = false;
+      };
     }
-  };
+  }, [activeTab, userId, userRole, downloads.length]);
 
   const allResources =
     recentResources.length > 0 ? recentResources : initialMarketResources;
 
-  const [toast, setToast] = useState<{
+  const [toast] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
-
-  const handleAvatarUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setToast({
-        type: "error",
-        message: "Please select a valid image file.",
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64Image = reader.result as string;
-
-      startTransition(async () => {
-        const res = await updateUserProfile({
-          userId: user.id,
-          imageBase64: base64Image,
-        });
-
-        if (res.ok && res.user) {
-          setUpdatedAvatar(res.user.image || null);
-          setToast({
-            type: "success",
-            message: "Profile picture successfully updated!",
-          });
-        } else {
-          setToast({
-            type: "error",
-            message: res.message || "Error updating picture.",
-          });
-        }
-
-        setTimeout(() => setToast(null), 4000);
-      });
-    };
-    reader.readAsDataURL(file);
-  };
 
   const categories = ["ALL", "TACTICS", "OPENINGS", "ENDGAME", "STRATEGY"];
 
   return (
     <div className="flex w-full min-h-[calc(100vh-4rem)] bg-[var(--color-bg-beige)] text-[var(--color-text-main)] relative box-border mt-16">
       <DashboardSidebar
-        user={user}
         activeTab={activeTab}
-        setActiveTab={handleTabChange}
-        isPending={isPending}
-        handleAvatarUpload={handleAvatarUpload}
+        setActiveTab={setActiveTab}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
       />
@@ -156,7 +123,7 @@ export default function StudentDashboard({
             <Menu className="w-6 h-6" />
           </button>
           <span className="font-bold text-sm tracking-tight text-[var(--color-text-main)]">
-            Student Panel
+            Admin Panel
           </span>
           <div className="w-6" />
         </header>
@@ -188,7 +155,7 @@ export default function StudentDashboard({
               </h2>
               <p className="text-sm sm:text-base text-[var(--color-text-muted)] font-medium">
                 {activeTab === "market" &&
-                  "Explore, filter and acquire study materials and PGN files."}
+                  "Explore, filter and acquire study materials."}
                 {activeTab === "profile" &&
                   "Manage your personal information and account settings."}
                 {activeTab === "library" &&
@@ -200,7 +167,7 @@ export default function StudentDashboard({
 
           {activeTab === "profile" && (
             <div className="max-w-4xl space-y-6">
-              <ProfileSettings user={user} />
+              <ProfileSettings />
             </div>
           )}
 
@@ -255,7 +222,7 @@ export default function StudentDashboard({
                       <ResourceDetailCard
                         key={resource.id}
                         resource={resource}
-                        userRole={user.role}
+                        userRole={user?.role || "ADMIN"}
                       />
                     ))}
                 </div>
@@ -265,14 +232,14 @@ export default function StudentDashboard({
 
           {activeTab === "library" && (
             <div className="space-y-6">
-              {isLoadingPurchases ? (
+              {isLoadingDownloads ? (
                 <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-3">
                   <Download className="w-12 h-12 mx-auto text-[var(--color-text-muted)] opacity-50 animate-pulse" />
                   <p className="text-lg font-semibold text-[var(--color-text-main)]">
                     Loading your downloads...
                   </p>
                 </div>
-              ) : purchasedResources.length === 0 ? (
+              ) : downloads.length === 0 ? (
                 <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-3">
                   <BookOpen className="w-12 h-12 mx-auto text-[var(--color-text-muted)] opacity-50" />
                   <p className="text-lg font-semibold text-[var(--color-text-main)]">
@@ -285,11 +252,11 @@ export default function StudentDashboard({
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-                  {purchasedResources.map((resource) => (
+                  {downloads.map((item) => (
                     <ResourceDetailCard
-                      key={resource.id}
-                      resource={resource}
-                      userRole={user.role}
+                      key={item.id}
+                      resource={item.resource}
+                      userRole={user?.role || "ADMIN"}
                     />
                   ))}
                 </div>

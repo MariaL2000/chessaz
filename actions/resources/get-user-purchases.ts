@@ -1,54 +1,85 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { mapResourceToDTO } from "./resourceMappers";
-import { ResourceDTO } from "@/types/resource";
+
+//listar los recursos descargados
+export interface DownloadItemDTO {
+  id: string;
+  pricePaid: number;
+  isFree: boolean;
+  createdAt: Date;
+  user: {
+    name: string | null;
+    email: string | null;
+    role: string;
+  };
+  resource: {
+    id: string;
+    title: string;
+    slug: string;
+    category: string;
+    type: string;
+    fileUrl: string;
+    price: number;
+  };
+}
 
 /**
- * Obtiene los recursos adquiridos (comprados/descargados) por un usuario específico (Estudiante o Profesor)
+ * Obtiene las descargas del sitio.
+ * - Si es ADMIN, devuelve TODAS las descargas de la plataforma (para el panel de Admin).
+ * - Si es STUDENT o TEACHER, devuelve únicamente las descargas realizadas por ese usuario específico (para "My Downloads").
  */
-export async function getUserPurchases(
-  userId: string,
-): Promise<{ ok: boolean; resources: ResourceDTO[]; message?: string }> {
+export async function getUserDownloads(
+  userId?: string,
+  userRole?: "ADMIN" | "TEACHER" | "STUDENT" | string,
+): Promise<{ ok: boolean; downloads: DownloadItemDTO[]; message?: string }> {
   try {
-    if (!userId || userId.trim() === "") {
-      return { ok: true, resources: [] };
+    const isAdmin = userRole === "ADMIN";
+
+    // Si no es admin, filtramos estrictamente por el userId del usuario actual
+    const whereClause = isAdmin ? {} : { userId: userId || "" };
+
+    if (!isAdmin && (!userId || userId.trim() === "")) {
+      return { ok: true, downloads: [] };
     }
 
-    const purchases = await prisma.purchase.findMany({
-      where: {
-        userId: userId,
-        status: "COMPLETED",
-      },
+    const downloads = await prisma.download.findMany({
+      where: whereClause,
       include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
         resource: {
-          include: {
-            reviews: { select: { rating: true } },
-            teacher: {
-              include: {
-                user: { select: { name: true, image: true, role: true } },
-              },
-            },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            category: true,
+            type: true,
+            fileUrl: true,
+            price: true,
           },
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: "desc", // Ordenadas de más reciente a más antigua
       },
     });
 
-    const resources = purchases.map((p) => mapResourceToDTO(p.resource));
-
     return {
       ok: true,
-      resources,
+      downloads: downloads as DownloadItemDTO[],
     };
   } catch (error) {
-    console.error("Error fetching user purchases:", error);
+    console.error("Error fetching user downloads:", error);
     return {
       ok: false,
-      resources: [],
-      message: "Failed to retrieve user purchases.",
+      downloads: [],
+      message: "Failed to retrieve downloads history.",
     };
   }
 }

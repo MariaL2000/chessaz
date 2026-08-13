@@ -6,7 +6,7 @@ import {
   getRecentResources,
   getPendingResources,
   getCommunityResources,
-  getResourceByTeacherId, // <--- Asegúrate de importar o crear esta acción que lista por profesor
+  getResourceByTeacherId,
   ResourceFilterOptions,
 } from "@/actions/resources/getResourceActions";
 

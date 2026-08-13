@@ -33,6 +33,7 @@ model User {
   // Application Relations
   teacherProfile TeacherProfile?
   purchases      Purchase[]
+  downloads      Download[] // Historial de descargas (gratis y pago)
   scans          NotationScan[]
   reviews        Review[]
 
@@ -83,33 +84,33 @@ model TeacherProfile {
   id              String  @id @default(cuid())
   userId          String  @unique
   user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fideTitle       String? // Ej: GM, IM, FM, CM, FI
-  fideId          String? // ID Oficial FIDE
+  fideTitle       String?
+  fideId          String?
   peakRating      Int?
   bio             String?
-  stripeAccountId String? // Para Stripe Connect (cobros/comisiones)
+  stripeAccountId String?
 
   resources Resource[]
   sales     Sale[]
 }
 
 // ==========================================
-// 3. RECURSOS EDUCATIVOS DE AJEDREZ
+// 3. RECURSOS EDUCATIVOS
 // ==========================================
 
 enum ChessCategory {
-  OPENINGS // Aperturas y Defensas
-  TACTICS // Combinaciones y Puzzles
-  STRATEGY // Planes, Estructura de Peones
-  ENDGAMES // Finales (Teóricos y Prácticos)
-  LESSON_PLAN // Unidades Didácticas completas
+  OPENINGS
+  TACTICS
+  STRATEGY
+  ENDGAMES
+  LESSON_PLAN
 }
 
 enum ResourceType {
-  PDF_LESSON // Guías y teoría lista para imprimir
-  PGN_FILE // Partidas/Bases para ChessBase o Lichess
-  WORKSHEET // Tareas y ejercicios prácticos
-  BUNDLE // Paquete completo (PDF + PGN + Tarea)
+  PDF_LESSON
+  PGN_FILE
+  WORKSHEET
+  BUNDLE
 }
 
 model Resource {
@@ -120,29 +121,28 @@ model Resource {
   category    ChessCategory
   type        ResourceType
 
-  // Rangos de Elo del Alumno (Ej: 1000 - 1400)
   minElo Int @default(0)
   maxElo Int @default(2800)
 
-  // Archivos (URLs de Cloudinary)
   fileUrl     String
-  previewUrl  String? // Lead Magnet / Muestra para publicidad
+  previewUrl  String?
   hasHomework Boolean @default(true)
 
-  price       Float   @default(0.0) // 0 = Gratis
-  isPublished Boolean @default(false) // Pendiente por defecto para revisión de admin
+  price       Float   @default(0.0)
+  isPublished Boolean @default(false)
 
   teacherId String
   teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
 
   purchases Purchase[]
+  downloads Download[] // Relación añadida para rastrear descargas
   reviews   Review[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
 
 // ==========================================
-// 4. VENTAS Y COMISIONES (STRIPE)
+// 4. VENTAS Y DESCARGAS
 // ==========================================
 
 enum PurchaseStatus {
@@ -151,6 +151,7 @@ enum PurchaseStatus {
   REFUNDED
 }
 
+// Registro de cuando alguien compra un recurso
 model Purchase {
   id         String         @id @default(cuid())
   userId     String
@@ -164,20 +165,35 @@ model Purchase {
   sale Sale?
 }
 
+// Registro de todas las bajadas de archivos (Gratis o Pago)
+model Download {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  pricePaid  Float    @default(0.0)
+  isFree     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([resourceId])
+}
+
 model Sale {
   id              String         @id @default(cuid())
   purchaseId      String         @unique
   purchase        Purchase       @relation(fields: [purchaseId], references: [id])
   teacherId       String
   teacher         TeacherProfile @relation(fields: [teacherId], references: [id])
-  grossAmount     Float // Monto total pagado
-  platformFee     Float // Comisión de la plataforma
-  teacherEarnings Float // Ganancia limpia del profesor
+  grossAmount     Float
+  platformFee     Float
+  teacherEarnings Float
   createdAt       DateTime       @default(now())
 }
 
 // ==========================================
-// 5. ESCANEO DE PLANILLAS CON IA / OCR
+// 5. ESCANEO DE PLANILLAS (OCR)
 // ==========================================
 
 enum ScanStatus {
@@ -190,9 +206,9 @@ model NotationScan {
   id        String     @id @default(cuid())
   userId    String
   user      User       @relation(fields: [userId], references: [id])
-  imageUrl  String // URL de Cloudinary
-  pgnResult String? // Salida PGN generada
-  analysis  String? // Análisis de motor
+  imageUrl  String
+  pgnResult String?
+  analysis  String?
   status    ScanStatus @default(PROCESSING)
   createdAt DateTime   @default(now())
 }

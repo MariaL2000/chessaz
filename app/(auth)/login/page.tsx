@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import { loginUser } from "@/actions/auth/login";
 import { Button } from "@/components/ui/Button";
 import { AuthBackground } from "@/components/auth/AuthBackground";
+import { useAuthStore } from "@/store/useAuthStore";
 
 type UserRole = "TEACHER" | "STUDENT" | "ADMIN";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { setUser } = useAuthStore();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -45,6 +47,14 @@ export default function LoginPage() {
       return;
     }
 
+    // Actualizamos el estado global de Zustand para que la Navbar reaccione de inmediato
+    setUser({
+      name: res.name || "",
+      email: res.email || email,
+      role: (res.role as UserRole) || "STUDENT",
+      image: res.image || "",
+    });
+
     const targetPath = getDashboardPath(res.role as UserRole);
     router.push(targetPath);
     router.refresh();
@@ -62,7 +72,6 @@ export default function LoginPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Email */}
         <div>
           <label
             className="block text-xs font-bold uppercase tracking-wider mb-1.5"
@@ -84,7 +93,6 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Password */}
         <div>
           <label
             className="block text-xs font-bold uppercase tracking-wider mb-1.5"
@@ -111,41 +119,7 @@ export default function LoginPage() {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? (
-                /* Icono Ojo Tachado (EyeOff) */
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .698 10.355 10.355 0 0 1-4.02 4.887" />
-                  <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
-                  <path d="M17.479 17.499A10.75 10.75 0 0 1 12 19c-5.523 0-10-7-10-7a10.738 10.738 0 0 1 3.254-4.2" />
-                  <line x1="2" x2="22" y1="2" y2="22" />
-                </svg>
-              ) : (
-                /* Icono Ojo (Eye) */
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              )}
+              {showPassword ? "Hide" : "Show"}
             </button>
           </div>
         </div>

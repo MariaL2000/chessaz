@@ -5,15 +5,18 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Star, Check, BookOpen } from "lucide-react";
+import { Star, Check } from "lucide-react";
 
 interface ResourceCardProps {
   resource?: any;
+  href?: string;
   [key: string]: any;
 }
 
 export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
   const resource = props.resource || props;
+  // Permitir un href personalizado o por defecto llevar al detalle/login según convenga
+  const cardHref = props.href || "/login";
 
   const title = resource?.title || "Lección de Ajedrez";
   const category = resource?.category || "TACTICS";
@@ -23,14 +26,14 @@ export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
   const hasHomework = resource?.hasHomework ?? false;
   const price = resource?.price ?? 0;
 
+  // Validación de imagen con fallback seguro
   const rawPreview = resource?.previewUrl || resource?.imageUrl || null;
-
   const initialPreview =
     rawPreview && (rawPreview.startsWith("http") || rawPreview.startsWith("/"))
       ? rawPreview
-      : null;
+      : "/fallback.png";
 
-  const [imgSrc, setImgSrc] = useState<string | null>(initialPreview);
+  const [imgSrc, setImgSrc] = useState<string>(initialPreview);
 
   const reviews = resource?.reviews || [];
   const reviewsCount = resource?.reviewsCount ?? (reviews.length || 0);
@@ -58,23 +61,17 @@ export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
       transition={{ duration: 0.2 }}
       className="w-full max-w-sm sm:max-w-none rounded-2xl overflow-hidden border border-[var(--color-border-custom)] bg-[var(--color-bg-card)] shadow-sm flex flex-col justify-between group/card cursor-pointer"
     >
-      <Link href="/login" className="flex flex-col h-full">
+      <Link href={cardHref} className="flex flex-col h-full">
         {/* Banner de Imagen */}
         <div className="relative w-full h-44 sm:h-48 shrink-0 overflow-hidden bg-[var(--color-bg-beige-dark)]">
-          {imgSrc ? (
-            <Image
-              src={imgSrc}
-              alt={title}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
-              className="object-cover group-hover/card:scale-105 transition-transform duration-500"
-              onError={() => setImgSrc(null)}
-            />
-          ) : (
-            <div className="flex items-center justify-center w-full h-full text-[var(--color-text-muted)] opacity-50">
-              <BookOpen className="w-12 h-12" />
-            </div>
-          )}
+          <Image
+            src={imgSrc}
+            alt={title}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+            className="object-cover group-hover/card:scale-105 transition-transform duration-500"
+            onError={() => setImgSrc("/fallback.png")}
+          />
 
           <span className="absolute top-3 left-3 text-[10px] font-bold text-white px-2.5 py-1 rounded-full shadow-md bg-[#3b82f6]/80 backdrop-blur-md">
             ELO {minElo} - {maxElo}
