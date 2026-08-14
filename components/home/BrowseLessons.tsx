@@ -11,7 +11,6 @@ import {
   BookOpen,
   Filter,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { ResourceSearchBar } from "./ResourceSearchBar";
 import { ResourceCard } from "./ResourceCard";
 import { useResourceStore } from "@/store/resource-store";
@@ -154,7 +153,7 @@ export const BrowseLessons = () => {
 
           <motion.div
             whileHover={{ y: -6 }}
-            onClick={() => (window.location.href = "/login")}
+            onClick={() => (window.location.href = "/lessons")}
             className="flex-shrink-0 w-[280px] sm:w-[310px] rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden text-white bg-[var(--color-blue)] shadow-md cursor-pointer"
           >
             <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">

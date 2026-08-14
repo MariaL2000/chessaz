@@ -15,7 +15,7 @@ interface ResourceState {
   recentResources: ResourceDTO[];
   pendingResources: ResourceDTO[];
   communityResources: ResourceDTO[];
-  teacherResources: ResourceDTO[]; // <--- Estado de clases del profesor
+  teacherResources: ResourceDTO[];
 
   hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
@@ -43,7 +43,7 @@ export const useResourceStore = create<ResourceState>()(
       hasHydrated: false,
       setHasHydrated: (state: boolean) => set({ hasHydrated: state }),
 
-      fetchRecentResources: async (limit = 50) => {
+      fetchRecentResources: async (limit = 15) => {
         const res = await getRecentResources(limit);
         if (res.ok) {
           set({ recentResources: res.resources });
