@@ -7,49 +7,25 @@ import { z } from "zod";
 import { Role } from "@/app/generated/prisma/client";
 import { cookies } from "next/headers";
 
-//verified_checkout_email): Expira en 7 días.
-//Código OTP (en la base de datos): Expira en 10 minutos.
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const emailSchema = z
   .string()
   .email({ message: "Invalid email address format." });
 
-async function verifyEmailExists(email: string): Promise<boolean> {
-  try {
-    const domain = email.split("@")[1];
-    if (!domain) return false;
-    const dns = await import("dns").then((m) => m.promises);
-    const mxRecords = await dns.resolveMx(domain);
-    return Array.isArray(mxRecords) && mxRecords.length > 0;
-  } catch (error) {
-    console.error("DNS MX validation failed:", error);
-    return false;
-  }
-}
-
 export async function sendOtpCheckoutAction(email: string, resourceId: string) {
-  if (!resourceId) {
+  if (!resourceId)
     return { ok: false, message: "Error: Resource ID is missing." };
-  }
 
   try {
     const validationResult = emailSchema.safeParse(email);
     if (!validationResult.success) {
-      const errorMessage =
-        validationResult.error.issues[0]?.message || "Invalid email format.";
-      throw new Error(errorMessage);
+      throw new Error("Invalid email format.");
     }
 
-    const domainExists = await verifyEmailExists(email);
-    if (!domainExists) {
-      throw new Error(
-        "Email does not exist or the domain cannot receive mail.",
-      );
-    }
-
+    // Ya no hacemos DNS lookup aquí para evitar el ETIMEOUT
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await prisma.verificationToken.create({
       data: {
@@ -77,6 +53,7 @@ export async function sendOtpCheckoutAction(email: string, resourceId: string) {
 
     return { ok: true, message: "Verification code sent to your email." };
   } catch (error: any) {
+    console.error("Error in sendOtpCheckoutAction:", error);
     return {
       ok: false,
       message: error.message || "Failed to initiate verification.",
@@ -90,9 +67,8 @@ export async function verifyOtpAndProcessCheckoutAction(
   code: string,
   price: number,
 ) {
-  if (!resourceId) {
+  if (!resourceId)
     return { ok: false, message: "Error: Resource ID is missing." };
-  }
 
   try {
     const record = await prisma.verificationToken.findFirst({
@@ -111,10 +87,11 @@ export async function verifyOtpAndProcessCheckoutAction(
     (await cookies()).set("verified_checkout_email", email, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7, // 7 días
+      maxAge: 60 * 60 * 24 * 7,
       path: "/",
     });
 
+    // Búsqueda de usuario
     let dbUser = await prisma.user.findUnique({ where: { email } });
     if (!dbUser) {
       dbUser = await prisma.user.create({
@@ -129,20 +106,14 @@ export async function verifyOtpAndProcessCheckoutAction(
       });
 
       const rawFileUrl = resourceRecord?.fileUrl || "";
-
-      if (!rawFileUrl) {
+      if (!rawFileUrl)
         return { ok: false, message: "Resource file URL not found." };
-      }
 
-      // Asegurar que la URL sea absoluta y use HTTPS (ideal para Cloudinary o URLs externas)
-      let secureCloudinaryUrl = rawFileUrl;
-      if (secureCloudinaryUrl.startsWith("http://")) {
-        secureCloudinaryUrl = secureCloudinaryUrl.replace(
-          "http://",
-          "https://",
-        );
-      } else if (secureCloudinaryUrl.startsWith("/")) {
-        // Si por alguna razón se guardó como ruta relativa, la convertimos en absoluta con el dominio actual
+      let secureCloudinaryUrl = rawFileUrl.startsWith("http://")
+        ? rawFileUrl.replace("http://", "https://")
+        : rawFileUrl;
+
+      if (secureCloudinaryUrl.startsWith("/")) {
         const baseUrl =
           process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
         secureCloudinaryUrl = `${baseUrl}${secureCloudinaryUrl}`;
@@ -158,10 +129,7 @@ export async function verifyOtpAndProcessCheckoutAction(
           <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #d97706;">Thank you for your verification!</h2>
             <p>Your resource <strong>${resourceRecord?.title || "Chess Lesson"}</strong> is ready.</p>
-            <p>You can securely download your file by clicking the button below:</p>
-            <a href="${secureCloudinaryUrl}" target="_blank" rel="noopener noreferrer" style="background: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 20px 0;">Download File</a>
-            <p style="margin-top: 20px; font-size: 12px; color: #666;">If the button doesn't work, copy and paste this link into your browser:</p>
-            <p style="font-size: 12px; color: #2563eb; word-break: break-all;">${secureCloudinaryUrl}</p>
+            <a href="${secureCloudinaryUrl}" style="background: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Download File</a>
           </div>
         `,
       });
@@ -170,16 +138,17 @@ export async function verifyOtpAndProcessCheckoutAction(
         ok: true,
         isFree: true,
         fileUrl: secureCloudinaryUrl,
-        message: "Verified! Secure download link sent to your email.",
+        message: "Verified! Secure download link sent.",
       };
     }
+
     return {
       ok: true,
       isFree: false,
       userId: dbUser.id,
       message: "Email verified. Ready for payment checkout.",
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Verification error:", error);
     return {
       ok: false,

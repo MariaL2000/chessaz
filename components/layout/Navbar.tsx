@@ -325,7 +325,7 @@ export const Navbar = () => {
                       onClick={() => setShowProfilePopup(false)}
                       className="text-xs font-bold text-[#C59B6C] hover:underline"
                     >
-                      Dashboard {user.role} &rarr;
+                      Go to Dashboard &rarr;
                     </Link>
                   </div>
                 </motion.div>

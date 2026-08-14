@@ -33,13 +33,10 @@ export const ResourceActions: React.FC<ResourceActionsProps> = ({
   );
 
   const isAdmin = userRole === "ADMIN";
-  const isFree = price === 0;
 
-  // Solo los administradores o usuarios logueados descargan directo.
-  // Los invitados siempre pasan por el checkout OTP para recibir su correo,
-  // pero Zustand recordará que ya verificaron para cambiar el comportamiento visual si lo deseas.
-  const canDownloadDirectly =
-    isAdmin || (isFree && user && userRole !== "guest");
+  // MODIFICACIÓN: Solo los administradores descargan de forma directa sin pasar por checkout/OTP.
+  // Los teachers (aunque estén logueados) y los invitados pasarán por el modal de verificación.
+  const canDownloadDirectly = isAdmin;
 
   const handleAction = async () => {
     if (canDownloadDirectly) {
@@ -95,7 +92,9 @@ export const ResourceActions: React.FC<ResourceActionsProps> = ({
               ? " Download"
               : isVerifiedGuest
                 ? " Access Verified (Check Email)"
-                : ` Buy $${price.toFixed(2)}`}
+                : price === 0
+                  ? " Get Free (Verify Email)"
+                  : ` Buy $${price.toFixed(2)}`}
           </>
         )}
       </CustomButton>

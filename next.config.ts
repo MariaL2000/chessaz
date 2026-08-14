@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "10.144.200.24",
-    "10.144.200.2",
+    "10.144.200.41",
     "https://chessaz.vercel.app/",
   ],
   images: {

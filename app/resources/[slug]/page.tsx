@@ -22,7 +22,8 @@ export default async function ResourceDetailPage({ params }: PageProps) {
   const resource = res.resource;
   const previewUrl = resource.previewUrl || "/header.png";
   const teacherName = resource.teacher?.user?.name || "Verified Instructor";
-  const teacherImage = resource.teacher?.user?.image || "/user.JPG";
+  const teacherImage = resource.teacher?.user?.image || "/user.jpg";
+  const teacherEmail = resource.teacher?.user?.email || ""; // Correo del instructor disponible si se requiere
 
   const rawReviews = resource.reviews || [];
   const processedReviews = rawReviews.map((r) => ({

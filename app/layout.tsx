@@ -3,6 +3,7 @@ import { Inter, Playfair_Display, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/home/Footer";
+import ChessChat from "@/components/chatboot/ChessChat";
 
 // Configuración de las fuentes
 const inter = Inter({
@@ -29,9 +30,70 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+// SEO Avanzado con todas las palabras y frases clave posibles
 export const metadata: Metadata = {
-  title: "Chessaz - Platform for Chess Coaches",
-  description: "Better lessons, stronger students, more time for you.",
+  title: {
+    default: "Chessaz - Chess Training Platform & Marketplace for Coaches",
+    template: "%s | Chessaz",
+  },
+  description:
+    "Chessaz is the ultimate online chess platform. Learn chess strategies, study openings, master tactics, and empower chess coaches and teachers to publish, share, and monetize their own courses and chess lessons.",
+  keywords: [
+    "chess platform",
+    "online chess courses",
+    "chess coaching software",
+    "sell chess lessons",
+    "chess teachers marketplace",
+    "learn chess strategy",
+    "chess openings and tactics",
+    "chess training resources",
+    "plataforma de ajedrez",
+    "cursos de ajedrez online",
+    "vender clases de ajedrez",
+    "entrenadores de ajedrez",
+  ],
+  authors: [{ name: "Chessaz Team" }],
+  creator: "Chessaz",
+  publisher: "Chessaz",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL("https://chessaz.com"), // Cambia por tu dominio real cuando esté en producción
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en-US": "/en",
+      "es-ES": "/es",
+    },
+  },
+  openGraph: {
+    title: "Chessaz - Chess Training Platform & Marketplace for Coaches",
+    description:
+      "Better lessons, stronger students, more time for you. Discover professional chess courses or start selling your own chess lessons as a coach.",
+    url: "https://chessaz.com",
+    siteName: "Chessaz",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Chessaz - Chess Platform for Players & Coaches",
+    description:
+      "Improve your chess tactics, learn openings, and monetize your chess teaching content.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({
@@ -48,6 +110,8 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-grow">{children}</main>
         <Footer />
+        {/* Chatbot con IA integrado globalmente */}
+        <ChessChat />
       </body>
     </html>
   );

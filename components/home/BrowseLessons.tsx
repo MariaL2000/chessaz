@@ -180,14 +180,13 @@ export const BrowseLessons = () => {
             </div>
 
             <div className="w-full relative z-10 mt-6">
-              <Link href="/lessons" className="w-full">
-                <Button
-                  variant="login"
-                  size="sm"
-                  className="w-full font-bold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hover)] text-white border-none shadow-md"
+              <Link href="/lessons" className="w-full block">
+                <button
+                  type="button"
+                  className="w-full py-2 px-4 rounded-md font-bold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hover)] text-white border-none shadow-md transition-colors cursor-pointer text-center"
                 >
                   EXPLORE ALL LESSONS
-                </Button>
+                </button>
               </Link>
             </div>
           </motion.div>

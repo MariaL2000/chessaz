@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function getResourceDetails(slug: string) {
   try {
     if (!slug) {
-      return { ok: false, message: "Slug de recurso inválido." };
+      return { ok: false, message: "Invalid resource slug." };
     }
 
     const resource = await prisma.resource.findUnique({
@@ -17,6 +17,7 @@ export async function getResourceDetails(slug: string) {
               select: {
                 name: true,
                 image: true,
+                email: true,
               },
             },
           },
@@ -38,12 +39,15 @@ export async function getResourceDetails(slug: string) {
     });
 
     if (!resource) {
-      return { ok: false, message: "El recurso no existe o fue eliminado." };
+      return {
+        ok: false,
+        message: "The resource does not exist or has been deleted.",
+      };
     }
 
     return { ok: true, resource };
   } catch (error) {
-    console.error("Error al obtener los detalles del recurso:", error);
-    return { ok: false, message: "Error interno al servidor." };
+    console.error("Error fetching resource details:", error);
+    return { ok: false, message: "Internal server error." };
   }
 }
