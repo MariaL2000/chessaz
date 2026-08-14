@@ -31,11 +31,11 @@ export default async function ResourceDetailPage({ params }: PageProps) {
       r.user && r.user.name
         ? {
             name: r.user.name,
-            image: r.user.image || "/user.JPG",
+            image: r.user.image || "/user.jpg",
           }
         : {
             name: "Verified Guest",
-            image: "/user.JPG",
+            image: "/user.jpg",
           },
   }));
 
