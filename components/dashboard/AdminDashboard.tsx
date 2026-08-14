@@ -17,7 +17,7 @@ import ProfileSettings from "@/components/dashboard/ProfileSettings";
 import { UploadResourceForm } from "@/components/dashboard/UploadResourceForm";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { DashboardResourceSearchBar } from "@/components/dashboard/DashboardResourceSearchBar";
-import { DashboardResourceCard } from "@/components/dashboard/DashboardResourceCard";
+import { ResourceCard } from "@/components/home/ResourceCard";
 import { useResourceStore } from "@/store/resource-store";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { ResourceDTO } from "@/types/resource";
@@ -60,7 +60,7 @@ export default function AdminDashboard({
         id: initialUser.id,
         name: initialUser.name,
         email: initialUser.email || "",
-        role: initialUser.role as "TEACHER" | "STUDENT" | "ADMIN",
+        role: initialUser.role as "TEACHER" | "ADMIN",
         image: initialUser.image || null,
       });
     }
@@ -201,7 +201,7 @@ export default function AdminDashboard({
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
                   {currentPendingResources.map((resource) => (
                     <div key={resource.id} className="relative flex flex-col">
-                      <DashboardResourceCard resource={resource} />
+                      <ResourceCard resource={resource} />
                       <div className="mt-2 flex items-center justify-between px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-semibold">
                         <span className="text-amber-700/80 flex items-center gap-2">
                           <Clock className="w-4 h-4" /> Action Required
@@ -339,7 +339,7 @@ export default function AdminDashboard({
                     )
                     .map((resource) => (
                       <div key={resource.id} className="relative flex flex-col">
-                        <DashboardResourceCard resource={resource} />
+                        <ResourceCard resource={resource} />
                         <div className="mt-2 flex items-center justify-between px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-xl text-xs font-semibold">
                           <span className="text-[var(--color-text-muted)]">
                             Status:

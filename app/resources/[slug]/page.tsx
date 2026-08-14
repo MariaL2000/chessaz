@@ -5,6 +5,7 @@ import { Star, Check, BookOpen, ShieldCheck } from "lucide-react";
 import { ResourceActions } from "@/components/resources/ResourceActions";
 import ResourceReviews from "@/components/resources/ResourceReviews";
 import { auth } from "@/auth.config";
+import { cookies } from "next/headers";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -23,28 +24,45 @@ export default async function ResourceDetailPage({ params }: PageProps) {
   const teacherName = resource.teacher?.user?.name || "Verified Instructor";
   const teacherImage = resource.teacher?.user?.image || "/user.JPG";
 
-  const reviews = resource.reviews || [];
-  const reviewsCount = reviews.length;
+  const rawReviews = resource.reviews || [];
+  const processedReviews = rawReviews.map((r) => ({
+    ...r,
+    user:
+      r.user && r.user.name
+        ? {
+            name: r.user.name,
+            image: r.user.image || "/user.JPG",
+          }
+        : {
+            name: "Verified Guest",
+            image: "/user.JPG",
+          },
+  }));
+
+  const reviewsCount = processedReviews.length;
   const averageRating =
     reviewsCount > 0
       ? (
-          reviews.reduce(
+          processedReviews.reduce(
             (acc: number, r: { rating: number }) => acc + r.rating,
             0,
           ) / reviewsCount
         ).toFixed(1)
       : "New";
 
-  // Obtener sesión del usuario actual para habilitar el formulario de reseñas
   const session = await auth();
+  const cookieStore = await cookies();
+  const verifiedEmailCookie = cookieStore.get("verified_checkout_email")?.value;
+
   const userId = session?.user?.id || "";
+  const guestIdentifier = verifiedEmailCookie || "";
+  const userRole =
+    (session?.user?.role as "ADMIN" | "TEACHER" | "guest") || "guest";
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-beige)] text-[var(--color-text-main)] pt-28 pb-16 px-4 sm:px-6 lg:px-8 box-border overflow-x-hidden">
       <div className="max-w-5xl mx-auto space-y-8 w-full min-w-0">
-        {/* Tarjeta Principal de Detalles - Totalmente Responsiva */}
         <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-3xl p-6 sm:p-10 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full min-w-0 box-border">
-          {/* Columna Izquierda: Imagen y Elo */}
           <div className="lg:col-span-5 space-y-4 w-full min-w-0">
             <div className="relative w-full h-72 sm:h-80 rounded-2xl overflow-hidden bg-[var(--color-bg-beige-dark)] border border-[var(--color-border-custom)] shadow-inner">
               {previewUrl ? (
@@ -72,7 +90,6 @@ export default async function ResourceDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Columna Derecha: Información, Descripción y Acciones */}
           <div className="lg:col-span-7 space-y-6 w-full min-w-0">
             <div className="space-y-3 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -147,8 +164,11 @@ export default async function ResourceDetailPage({ params }: PageProps) {
               <div className="w-full sm:w-auto">
                 <ResourceActions
                   slug={resource.slug}
+                  resourceId={resource.id}
+                  title={resource.title}
                   price={resource.price}
-                  userRole="guest"
+                  userRole={userRole}
+                  fileUrl={resource.fileUrl}
                 />
               </div>
             </div>
@@ -162,12 +182,12 @@ export default async function ResourceDetailPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Sección de Reseñas y Carrusel - Adaptada a Mac, Tablet y Móvil */}
         <div className="w-full min-w-0">
           <ResourceReviews
             resourceId={resource.id}
             userId={userId}
-            initialReviews={reviews}
+            guestIdentifier={guestIdentifier}
+            initialReviews={processedReviews}
           />
         </div>
       </div>

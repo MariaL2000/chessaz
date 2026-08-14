@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["10.144.208.4", "100.107.6.122"],
+  allowedDevOrigins: [
+    "10.144.200.24",
+    "10.144.200.2",
+    "https://chessaz.vercel.app/",
+  ],
   images: {
     remotePatterns: [
       {

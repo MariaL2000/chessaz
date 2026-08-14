@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { AuthBackground } from "@/components/auth/AuthBackground";
 import { useAuthStore } from "@/store/useAuthStore";
 
-type UserRole = "TEACHER" | "STUDENT" | "ADMIN";
+type UserRole = "TEACHER" | "ADMIN";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -22,8 +22,6 @@ export default function SignUpPage() {
     switch (role) {
       case "TEACHER":
         return "/dashboard/teacher";
-      case "STUDENT":
-        return "/dashboard/student";
       case "ADMIN":
         return "/dashboard/admin";
       default:
@@ -178,7 +176,6 @@ export default function SignUpPage() {
             }}
           >
             <option value="TEACHER">Coach / Creator</option>
-            <option value="STUDENT">Chess Student</option>
           </select>
         </div>
 

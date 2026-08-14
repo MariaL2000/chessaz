@@ -78,8 +78,7 @@ export const Navbar = () => {
     switch (role?.toUpperCase()) {
       case "TEACHER":
         return "/dashboard/teacher";
-      case "STUDENT":
-        return "/dashboard/student";
+
       case "ADMIN":
         return "/dashboard/admin";
       default:

@@ -15,7 +15,7 @@ import ProfileSettings from "@/components/dashboard/ProfileSettings";
 import { UploadResourceForm } from "@/components/dashboard/UploadResourceForm";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { DashboardResourceSearchBar } from "@/components/dashboard/DashboardResourceSearchBar";
-import { DashboardResourceCard } from "@/components/dashboard/DashboardResourceCard";
+import { ResourceCard } from "@/components/home/ResourceCard";
 import { useResourceStore } from "@/store/resource-store";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { ResourceDTO } from "@/types/resource";
@@ -60,7 +60,7 @@ export default function TeacherDashboard({
         id: initialUser.id,
         name: initialUser.name,
         email: initialUser.email || "",
-        role: initialUser.role as "TEACHER" | "STUDENT" | "ADMIN",
+        role: initialUser.role as "TEACHER" | "ADMIN",
         image: initialUser.image || null,
       });
     }
@@ -333,10 +333,7 @@ export default function TeacherDashboard({
                         r.category === selectedCategory,
                     )
                     .map((resource) => (
-                      <DashboardResourceCard
-                        key={resource.id}
-                        resource={resource}
-                      />
+                      <ResourceCard key={resource.id} resource={resource} />
                     ))}
                 </div>
               )}
@@ -379,7 +376,7 @@ export default function TeacherDashboard({
                   )
                   .map((resource) => (
                     <div key={resource.id} className="relative flex flex-col">
-                      <DashboardResourceCard resource={resource} />
+                      <ResourceCard resource={resource} />
                       <div className="mt-2 flex items-center justify-between px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-xl text-xs font-semibold">
                         <span className="text-[var(--color-text-muted)]">
                           Status:

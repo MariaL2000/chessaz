@@ -27,11 +27,10 @@ export interface DownloadItemDTO {
 /**
  * Obtiene las descargas del sitio.
  * - Si es ADMIN, devuelve TODAS las descargas de la plataforma (para el panel de Admin).
- * - Si es STUDENT o TEACHER, devuelve únicamente las descargas realizadas por ese usuario específico (para "My Downloads").
  */
 export async function getUserDownloads(
   userId?: string,
-  userRole?: "ADMIN" | "TEACHER" | "STUDENT" | string,
+  userRole?: "ADMIN" | "TEACHER" | string,
 ): Promise<{ ok: boolean; downloads: DownloadItemDTO[]; message?: string }> {
   try {
     const isAdmin = userRole === "ADMIN";

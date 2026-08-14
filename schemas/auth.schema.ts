@@ -18,7 +18,7 @@ export const RegisterSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters long" }),
 
   role: z
-    .enum([Role.STUDENT, Role.TEACHER, Role.ADMIN], {
+    .enum([Role.TEACHER, Role.ADMIN], {
       message: "Invalid role selected",
     })
     .default(Role.TEACHER),

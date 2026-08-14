@@ -12,7 +12,6 @@ datasource db {
 // ==========================================
 
 enum Role {
-  STUDENT
   TEACHER
   ADMIN
 }
@@ -33,7 +32,7 @@ model User {
   // Application Relations
   teacherProfile TeacherProfile?
   purchases      Purchase[]
-  downloads      Download[] // Historial de descargas (gratis y pago)
+  downloads      Download[] // Historial de descargas (registrados)
   scans          NotationScan[]
   reviews        Review[]
 
@@ -134,16 +133,13 @@ model Resource {
   teacherId String
   teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
 
-  purchases Purchase[]
-  downloads Download[] // Relación añadida para rastrear descargas
-  reviews   Review[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  purchases   Purchase[]
+  downloads   Download[]
+  reviews     Review[]
+  guestAccess GuestAccess[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
-
-// ==========================================
-// 4. VENTAS Y DESCARGAS
-// ==========================================
 
 enum PurchaseStatus {
   PENDING
@@ -151,7 +147,6 @@ enum PurchaseStatus {
   REFUNDED
 }
 
-// Registro de cuando alguien compra un recurso
 model Purchase {
   id         String         @id @default(cuid())
   userId     String
@@ -165,11 +160,11 @@ model Purchase {
   sale Sale?
 }
 
-// Registro de todas las bajadas de archivos (Gratis o Pago)
 model Download {
   id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String? // Opcional para admitir invitados
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestEmail String? // Correo del invitado que realizó la descarga
   resourceId String
   resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
   pricePaid  Float    @default(0.0)
@@ -178,6 +173,19 @@ model Download {
 
   @@index([userId])
   @@index([resourceId])
+}
+
+model GuestAccess {
+  id         String   @id @default(cuid())
+  email      String
+  resourceId String
+  token      String   @unique
+  expiresAt  DateTime
+  isUsed     Boolean  @default(false)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([email, resourceId])
 }
 
 model Sale {
@@ -221,8 +229,9 @@ model Review {
   id         String   @id @default(cuid())
   rating     Int
   comment    String?
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
+  userId     String? // Opcional para invitados
+  user       User?    @relation(fields: [userId], references: [id])
+  guestEmail String? // Correo del invitado que reseña
   resourceId String
   resource   Resource @relation(fields: [resourceId], references: [id])
   createdAt  DateTime @default(now())

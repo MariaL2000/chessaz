@@ -5,73 +5,96 @@ import { ShoppingCart, Download, Loader2 } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { downloadResourceAction } from "@/actions/resources/downloadResource";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useGuestStore } from "@/store/useGuestStore";
+import { ResourceCheckoutModal } from "@/components/resources/ResourceCheckoutModal";
 
 interface ResourceActionsProps {
   slug: string;
+  resourceId: string;
+  title: string;
   price?: number;
-  userRole?: "ADMIN" | "TEACHER" | "STUDENT" | "guest";
+  userRole?: "ADMIN" | "TEACHER" | "guest";
 }
 
 export const ResourceActions: React.FC<ResourceActionsProps> = ({
   slug,
+  resourceId,
+  title,
   price = 0,
   userRole = "guest",
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuthStore(); // Obtenemos el usuario global para extraer su ID
+  const [showCheckout, setShowCheckout] = useState(false);
+  const { user } = useAuthStore();
+
+  const isVerifiedGuest = useGuestStore((state) =>
+    state.isVerified(resourceId),
+  );
 
   const isAdmin = userRole === "ADMIN";
   const isFree = price === 0;
-  const canDownload = isAdmin || isFree;
+
+  // Solo los administradores o usuarios logueados descargan directo.
+  // Los invitados siempre pasan por el checkout OTP para recibir su correo,
+  // pero Zustand recordará que ya verificaron para cambiar el comportamiento visual si lo deseas.
+  const canDownloadDirectly =
+    isAdmin || (isFree && user && userRole !== "guest");
 
   const handleAction = async () => {
-    if (canDownload) {
+    if (canDownloadDirectly) {
       try {
         setIsLoading(true);
-        // Enviamos el slug y el id del usuario actual a la server action
         const result = await downloadResourceAction(slug, user?.id);
-
         if (result.ok && result.fileUrl) {
-          const link = document.createElement("a");
-          link.href = result.fileUrl;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          link.download = `chess-resource-${slug}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          window.open(result.fileUrl, "_blank");
         } else {
-          alert(result.message || "Failed to complete the download.");
+          alert(result.message || "Failed to download.");
         }
       } catch (error) {
-        console.error("Download error:", error);
-        alert("An unexpected error occurred while downloading.");
+        console.error(error);
       } finally {
         setIsLoading(false);
       }
     } else {
-      console.log(`Redirecting to checkout for resource ${slug}...`);
+      setShowCheckout(true);
     }
   };
+
+  if (showCheckout) {
+    return (
+      <ResourceCheckoutModal
+        resourceId={resourceId}
+        slug={slug}
+        price={price}
+        title={title}
+        onClose={() => setShowCheckout(false)}
+      />
+    );
+  }
 
   return (
     <div className="flex items-center gap-3">
       <CustomButton
-        variant={canDownload ? "blue" : "gold"}
+        variant={isAdmin ? "blue" : "gold"}
         onClick={handleAction}
         disabled={isLoading}
       >
         {isLoading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> Downloading...
-          </>
-        ) : canDownload ? (
-          <>
-            <Download className="w-4 h-4" /> Download
+            <Loader2 className="w-4 h-4 animate-spin" /> Processing...
           </>
         ) : (
           <>
-            <ShoppingCart className="w-4 h-4" /> Buy ${price.toFixed(2)}
+            {isAdmin ? (
+              <Download className="w-4 h-4" />
+            ) : (
+              <ShoppingCart className="w-4 h-4" />
+            )}
+            {isAdmin
+              ? " Download"
+              : isVerifiedGuest
+                ? " Access Verified (Check Email)"
+                : ` Buy $${price.toFixed(2)}`}
           </>
         )}
       </CustomButton>

@@ -47,5 +47,6 @@ export function mapResourceToDTO(item: any): ResourceDTO {
     price: item.price,
     isPublished: item.isPublished ?? false,
     createdAt: item.createdAt ? new Date(item.createdAt) : undefined,
+    reviews: [],
   };
 }

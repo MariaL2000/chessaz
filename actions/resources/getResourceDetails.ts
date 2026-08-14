@@ -22,7 +22,6 @@ export async function getResourceDetails(slug: string) {
           },
         },
         reviews: {
-          // Cambiamos select por include para traer la relación user
           include: {
             user: {
               select: {

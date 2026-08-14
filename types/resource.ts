@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChessCategory, ResourceType } from "@/app/generated/prisma/client";
 import { z } from "zod";
 
 export interface ResourceDTO {
+  reviews: any[];
   id: string;
   title: string;
   slug: string;

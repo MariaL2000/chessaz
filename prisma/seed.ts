@@ -36,11 +36,9 @@ async function main() {
   // 2. Hash de contraseñas desde el .env (con fallback seguro para dev)
   const adminPassword = process.env.ADMIN_PASSWORD || "Admin123!";
   const teacherPassword = process.env.TEACHER_PASSWORD || "Teacher123!";
-  const studentPassword = process.env.STUDENT_PASSWORD || "Student123!";
 
   const hashedAdminPassword = bcryptjs.hashSync(adminPassword, 10);
   const hashedTeacherPassword = bcryptjs.hashSync(teacherPassword, 10);
-  const hashedStudentPassword = bcryptjs.hashSync(studentPassword, 10);
 
   // 3. Crear Administrador
   const adminEmail = process.env.ADMIN_EMAIL || "admin@chezz.com";
@@ -82,19 +80,6 @@ async function main() {
   console.log(
     `✅ Profesor creado: ${teacher.name} (${teacher.teacherProfile?.fideTitle})`,
   );
-
-  // 5. Crear Alumno de prueba
-  const student = await prisma.user.create({
-    data: {
-      email: "alumno@chezz.com",
-      name: "Tactics Student",
-      password: hashedStudentPassword,
-      role: Role.STUDENT,
-      image: "/user.JPG",
-    },
-  });
-
-  console.log(`✅ Alumno de prueba creado: ${student.email}`);
 
   // 6. Insertar recursos cumpliendo con los campos obligatorios del Schema (apuntando a recursos locales en /public)
   console.log("🌱 Insertando recursos y lecciones iniciales...");

@@ -60,22 +60,6 @@ export default function DashboardSidebar({
       ];
     }
 
-    if (role === "STUDENT") {
-      return [
-        {
-          section: "My Account",
-          items: [{ id: "profile", label: "My Profile", icon: UserCircle }],
-        },
-        {
-          section: "Learning",
-          items: [
-            { id: "market", label: "Marketplace", icon: ShoppingBag },
-            { id: "library", label: "My Downloads", icon: Library },
-          ],
-        },
-      ];
-    }
-
     // TEACHER / CREATOR (Incluye Earnings / wallet)
     return [
       {
@@ -104,7 +88,6 @@ export default function DashboardSidebar({
 
   const getPanelTitle = () => {
     if (role === "ADMIN") return "Admin Panel";
-    if (role === "STUDENT") return "Student Panel";
     return "Teacher Panel";
   };
 

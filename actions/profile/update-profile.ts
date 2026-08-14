@@ -55,7 +55,6 @@ export async function updateUserProfile(data: UpdateProfileInput) {
     });
 
     revalidatePath("/admin/users");
-    revalidatePath("/dashboard/student");
     revalidatePath("/dashboard/teacher");
 
     return {
