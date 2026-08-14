@@ -7,6 +7,8 @@ import { z } from "zod";
 import { Role } from "@/app/generated/prisma/client";
 import { cookies } from "next/headers";
 
+//verified_checkout_email): Expira en 7 días.
+//Código OTP (en la base de datos): Expira en 10 minutos.
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const emailSchema = z
