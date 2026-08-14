@@ -49,7 +49,7 @@ async function main() {
       name: "Super Admin Chezz",
       password: hashedAdminPassword,
       role: Role.ADMIN,
-      image: "/user.JPG",
+      image: "/user.jpg",
     },
   });
 
@@ -62,7 +62,7 @@ async function main() {
       name: "GM Magnus Test",
       password: hashedTeacherPassword,
       role: Role.TEACHER,
-      image: "/user.JPG",
+      image: "/user.jpg",
       teacherProfile: {
         create: {
           fideTitle: "GM",
