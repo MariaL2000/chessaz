@@ -9,6 +9,9 @@ import {
 import { revalidatePath } from "next/cache";
 import { sendResourceReviewNotification } from "@/lib/mail";
 import { createResourceSchema, CreateResourceInput } from "@/types/resource";
+import {
+  getPayPalSellerBlockReason,
+} from "@/lib/paypal-seller";
 
 function generateSlug(title: string): string {
   return title
@@ -61,6 +64,27 @@ export async function createChessResource(data: CreateResourceInput) {
         data: { userId: user.id },
       });
       teacherId = newTeacherProfile.id;
+    }
+
+    const teacherProfile = await prisma.teacherProfile.findUnique({
+      where: { id: teacherId },
+      select: {
+        paypalMerchantId: true,
+        paypalOnboardingStatus: true,
+        paypalBusinessName: true,
+        paypalBusinessEmail: true,
+      },
+    });
+
+    if (validatedData.price > 0) {
+      const blockReason = getPayPalSellerBlockReason(teacherProfile);
+      if (blockReason) {
+        return {
+          ok: false,
+          code: "PAYPAL_REQUIRED",
+          message: `${blockReason} Go to Profile → PayPal Payouts, add your Business Merchant ID and a label (business name or email) for the account that should receive your share.`,
+        };
+      }
     }
 
     // Upload main file (PDF) to Cloudinary

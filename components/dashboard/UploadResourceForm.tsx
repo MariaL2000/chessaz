@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { createChessResource } from "@/actions/resources/resourceActions";
-import { Loader2, FileText, Image as ImageIcon } from "lucide-react";
+import { getPayPalConnectionStatusAction } from "@/actions/paypal/paypalOnboardingActions";
+import { Loader2, FileText, Image as ImageIcon, AlertCircle } from "lucide-react";
 import { ChessCategory, ResourceType, FormDataState } from "@/types/chess";
+import { PayPalSellerRequirements } from "@/components/dashboard/PayPalSellerRequirements";
 
 const CATEGORY_LABELS: Record<ChessCategory, string> = {
   OPENINGS: "Openings & Defenses",
@@ -37,11 +39,18 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 export function UploadResourceForm({
   userId,
   onSuccess,
+  onGoToProfile,
 }: {
   userId: string;
   onSuccess?: () => void;
+  onGoToProfile?: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [isLoadingPayPal, setIsLoadingPayPal] = useState(true);
+  const [canSellPaidResources, setCanSellPaidResources] = useState(false);
+  const [paypalBlockReason, setPaypalBlockReason] = useState<string | null>(null);
+  const [platformFeePercent, setPlatformFeePercent] = useState(3);
+  const [marketplaceEnabled, setMarketplaceEnabled] = useState(true);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -50,6 +59,37 @@ export function UploadResourceForm({
   const [formData, setFormData] = useState<FormDataState>(INITIAL_STATE);
   const [fileBase64, setFileBase64] = useState<string>("");
   const [previewBase64, setPreviewBase64] = useState<string>("");
+
+  useEffect(() => {
+    if (!userId) return;
+
+    let isMounted = true;
+
+    const loadPayPalStatus = async () => {
+      setIsLoadingPayPal(true);
+      const result = await getPayPalConnectionStatusAction(userId);
+
+      if (!isMounted) return;
+
+      if (result.ok) {
+        setCanSellPaidResources(result.canSellPaidResources);
+        setPaypalBlockReason(result.blockReason);
+        setPlatformFeePercent(result.platformFeePercent);
+        setMarketplaceEnabled(result.marketplaceEnabled);
+      }
+
+      setIsLoadingPayPal(false);
+    };
+
+    loadPayPalStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+
+  const isPaidResource = formData.price > 0;
+  const paidUploadBlocked = isPaidResource && !canSellPaidResources;
 
   const handleFileConvert = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -81,6 +121,16 @@ export function UploadResourceForm({
       setMessage({
         type: "error",
         text: "You must attach the main resource file (PDF/PGN).",
+      });
+      return;
+    }
+
+    if (paidUploadBlocked) {
+      setMessage({
+        type: "error",
+        text:
+          paypalBlockReason ||
+          "Connect your PayPal Business payout account in Profile before uploading paid resources.",
       });
       return;
     }
@@ -138,6 +188,37 @@ export function UploadResourceForm({
           }`}
         >
           {message.text}
+        </div>
+      )}
+
+      {paidUploadBlocked && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-[var(--color-text-main)]">
+                PayPal required for paid resources
+              </p>
+              <p className="text-sm text-[var(--color-text-muted)]">
+                {paypalBlockReason ||
+                  "Configure your PayPal Business payout account before setting a price above $0."}
+              </p>
+              {onGoToProfile && (
+                <button
+                  type="button"
+                  onClick={onGoToProfile}
+                  className="text-sm font-semibold text-[var(--color-gold)] hover:underline"
+                >
+                  Go to Profile → PayPal Payouts
+                </button>
+              )}
+            </div>
+          </div>
+          <PayPalSellerRequirements
+            platformFeePercent={platformFeePercent}
+            marketplaceEnabled={marketplaceEnabled}
+            compact
+          />
         </div>
       )}
 
@@ -327,11 +408,13 @@ export function UploadResourceForm({
 
       <button
         type="submit"
-        disabled={isPending}
+        disabled={isPending || isLoadingPayPal || paidUploadBlocked}
         className="w-full py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hover)] text-black font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-4"
       >
         {isPending && <Loader2 className="w-5 h-5 animate-spin" />}
-        Upload Resource
+        {paidUploadBlocked
+          ? "Connect PayPal to sell paid resources"
+          : "Upload Resource"}
       </button>
     </form>
   );

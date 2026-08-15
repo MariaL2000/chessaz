@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/app/generated/prisma/client";
 import { revalidatePath } from "next/cache";
+import { canTeacherSellPaidResources } from "@/lib/paypal-seller";
 
 export async function reviewResource({
   resourceId,
@@ -26,6 +27,36 @@ export async function reviewResource({
     }
 
     if (action === "APPROVE") {
+      const resource = await prisma.resource.findUnique({
+        where: { id: resourceId },
+        include: {
+          teacher: {
+            select: {
+              paypalMerchantId: true,
+              paypalOnboardingStatus: true,
+              paypalBusinessName: true,
+              paypalBusinessEmail: true,
+              user: { select: { name: true, email: true } },
+            },
+          },
+        },
+      });
+
+      if (!resource) {
+        return { ok: false, message: "Resource not found." };
+      }
+
+      if (resource.price > 0 && !canTeacherSellPaidResources(resource.teacher)) {
+        const teacherLabel =
+          resource.teacher.user.name ||
+          resource.teacher.user.email ||
+          "This teacher";
+        return {
+          ok: false,
+          message: `${teacherLabel} has not configured a valid PayPal Business payout account. They must connect PayPal in Profile before a paid resource can be published.`,
+        };
+      }
+
       const updatedResource = await prisma.resource.update({
         where: { id: resourceId },
         data: { isPublished: true },

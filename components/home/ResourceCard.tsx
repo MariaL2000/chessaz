@@ -66,7 +66,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
         if (typeof fetchRecentResources === "function")
           fetchRecentResources(50);
       } else {
-        console.error(result.message);
+        alert(result.message);
       }
     });
   };

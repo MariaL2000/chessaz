@@ -6,6 +6,7 @@ import { PurchaseStatus } from "@/app/generated/prisma/client";
 import { grantResourceAccess } from "@/lib/grant-resource-access";
 import { calculateSaleSplit, formatPayPalAmount } from "@/lib/platform-fees";
 import { capturePayPalOrder, createPayPalOrder } from "@/lib/paypal";
+import { getPayPalSellerBlockReason } from "@/lib/paypal-seller";
 import { prisma } from "@/lib/prisma";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -44,11 +45,26 @@ async function validateCheckoutIdentity({
       price: true,
       isPublished: true,
       teacherId: true,
+      teacher: {
+        select: {
+          paypalMerchantId: true,
+          paypalOnboardingStatus: true,
+          paypalBusinessName: true,
+          paypalBusinessEmail: true,
+        },
+      },
     },
   });
 
   if (!resource || !resource.isPublished || resource.price <= 0) {
     throw new Error("This resource is not available for purchase.");
+  }
+
+  const paypalBlockReason = getPayPalSellerBlockReason(resource.teacher);
+  if (paypalBlockReason) {
+    throw new Error(
+      `${paypalBlockReason} The teacher must finish PayPal setup in Profile before checkout works.`,
+    );
   }
 
   const existingPurchase = await prisma.purchase.findFirst({
@@ -99,10 +115,12 @@ export async function createPayPalOrderAction(input: CheckoutIdentity) {
       },
     });
 
-    const orderId = await createPayPalOrder({
+    const { orderId, usedMarketplaceSplit } = await createPayPalOrder({
       purchaseId: purchase.id,
       amount: resource.price,
       description: resource.title,
+      sellerMerchantId: resource.teacher.paypalMerchantId!,
+      platformFee: split.platformFee,
     });
 
     await prisma.purchase.update({
@@ -113,6 +131,7 @@ export async function createPayPalOrderAction(input: CheckoutIdentity) {
     return {
       ok: true as const,
       orderId,
+      usedMarketplaceSplit,
       platformFeePercent: split.platformFeePercent,
       platformFee: split.platformFee,
       teacherEarnings: split.teacherEarnings,

@@ -24,6 +24,7 @@ import {
   DownloadItemDTO,
 } from "@/actions/resources/get-user-purchases";
 import { SecureDownloadButton } from "@/components/resources/SecureDownloadButton";
+import { PayPalConnectCard } from "@/components/dashboard/PayPalConnectCard";
 
 interface TeacherDashboardProps {
   initialUser?: {
@@ -35,12 +36,14 @@ interface TeacherDashboardProps {
   };
   initialMarketResources?: ResourceDTO[];
   initialTeacherResources?: ResourceDTO[];
+  initialPaypalReturn?: boolean;
 }
 
 export default function TeacherDashboard({
   initialUser,
   initialMarketResources = [],
   initialTeacherResources = [],
+  initialPaypalReturn = false,
 }: TeacherDashboardProps) {
   const [activeTab, setActiveTab] = useState<string>("market");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -184,6 +187,7 @@ export default function TeacherDashboard({
 
           {activeTab === "profile" && (
             <div className="max-w-4xl space-y-6">
+              <PayPalConnectCard userId={userId} autoSync={initialPaypalReturn} />
               <ProfileSettings />
             </div>
           )}
@@ -203,6 +207,7 @@ export default function TeacherDashboard({
               */}
               <UploadResourceForm
                 userId={userId}
+                onGoToProfile={() => setActiveTab("profile")}
                 onSuccess={() => {
                   setShowPendingBanner(true);
                   setActiveTab("uploads");

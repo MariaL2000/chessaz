@@ -4,7 +4,12 @@ import { prisma } from "@/lib/prisma";
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
 import { mapResourceToDTO } from "@/actions/resources/resourceMappers";
 
-export default async function TeacherDashboardPage() {
+export default async function TeacherDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ paypal?: string }>;
+}) {
+  const params = await searchParams;
   const session = await auth();
 
   if (!session?.user) {
@@ -56,6 +61,7 @@ export default async function TeacherDashboardPage() {
         role: dbUser.role,
       }}
       initialMarketResources={initialMarketResources}
+      initialPaypalReturn={params.paypal === "return"}
     />
   );
 }

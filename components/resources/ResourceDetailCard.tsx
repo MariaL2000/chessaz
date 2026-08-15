@@ -49,7 +49,10 @@ export const ResourceDetailCard: React.FC<ResourceDetailCardProps> = ({
   const handleReviewAction = async (action: "APPROVE" | "REJECT") => {
     if (!adminUserId) return;
     setIsProcessing(true);
-    await reviewResource({ resourceId: resource.id, adminUserId, action });
+    const result = await reviewResource({ resourceId: resource.id, adminUserId, action });
+    if (!result.ok && action === "APPROVE") {
+      alert(result.message);
+    }
     setIsProcessing(false);
   };
 
