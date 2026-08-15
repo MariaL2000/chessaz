@@ -19,7 +19,6 @@ export interface DownloadItemDTO {
     slug: string;
     category: string;
     type: string;
-    fileUrl: string;
     price: number;
   };
 }
@@ -59,7 +58,6 @@ export async function getUserDownloads(
             slug: true,
             category: true,
             type: true,
-            fileUrl: true,
             price: true,
           },
         },

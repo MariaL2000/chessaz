@@ -14,7 +14,6 @@ interface ResourceActionsProps {
   title: string;
   price?: number;
   userRole?: "ADMIN" | "TEACHER" | "guest";
-  fileUrl?: string;
 }
 
 export const ResourceActions: React.FC<ResourceActionsProps> = ({

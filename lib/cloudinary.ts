@@ -18,12 +18,72 @@ export async function uploadFileToCloudinary(
     const uploadResponse = await cloudinary.uploader.upload(fileBase64, {
       folder,
       resource_type: "auto",
+      type: "authenticated",
     });
     return { ok: true, url: uploadResponse.secure_url };
   } catch (error) {
     console.error("Error al subir archivo a Cloudinary:", error);
     return { ok: false, url: null };
   }
+}
+
+function getDeliveryType(fileUrl: string): "upload" | "authenticated" {
+  return fileUrl.includes("/authenticated/") ? "authenticated" : "upload";
+}
+
+function getResourceType(fileUrl: string): "image" | "video" | "raw" {
+  if (fileUrl.includes("/video/")) return "video";
+  if (fileUrl.includes("/raw/")) return "raw";
+  return "image";
+}
+
+function extractPublicIdFromCloudinaryUrl(fileUrl: string): string {
+  if (!fileUrl.includes("res.cloudinary.com")) {
+    throw new Error(
+      "Unsupported file URL. Resource must be stored in Cloudinary.",
+    );
+  }
+
+  const parts = new URL(fileUrl).pathname.split("/").filter(Boolean);
+  let index = 3;
+
+  while (index < parts.length && !/^v\d+$/.test(parts[index])) {
+    index++;
+  }
+
+  if (index >= parts.length) {
+    throw new Error("Invalid Cloudinary URL: version segment not found.");
+  }
+
+  index++;
+  const publicId = parts.slice(index).join("/");
+
+  if (!publicId) {
+    throw new Error("Invalid Cloudinary URL: public ID not found.");
+  }
+
+  return publicId;
+}
+
+export function createSignedDownloadUrl(
+  fileUrl: string,
+  ttlSeconds?: number,
+): string {
+  const ttl =
+    ttlSeconds ??
+    Number(process.env.RESOURCE_SIGNED_URL_TTL_SECONDS ?? 300);
+
+  const publicId = extractPublicIdFromCloudinaryUrl(fileUrl);
+  const resourceType = getResourceType(fileUrl);
+  const deliveryType = getDeliveryType(fileUrl);
+
+  return cloudinary.url(publicId, {
+    resource_type: resourceType,
+    type: deliveryType,
+    sign_url: true,
+    secure: true,
+    expires_at: Math.floor(Date.now() / 1000) + ttl,
+  });
 }
 
 /**

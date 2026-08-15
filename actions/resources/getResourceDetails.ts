@@ -45,7 +45,9 @@ export async function getResourceDetails(slug: string) {
       };
     }
 
-    return { ok: true, resource };
+    const { fileUrl: _fileUrl, ...publicResource } = resource;
+
+    return { ok: true, resource: publicResource };
   } catch (error) {
     console.error("Error fetching resource details:", error);
     return { ok: false, message: "Internal server error." };

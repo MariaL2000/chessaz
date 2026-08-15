@@ -23,6 +23,7 @@ import {
   getUserDownloads,
   DownloadItemDTO,
 } from "@/actions/resources/get-user-purchases";
+import { SecureDownloadButton } from "@/components/resources/SecureDownloadButton";
 
 interface TeacherDashboardProps {
   initialUser?: {
@@ -267,16 +268,11 @@ export default function TeacherDashboard({
                               {new Date(item.createdAt).toLocaleDateString()}
                             </td>
                             <td className="p-4 text-right">
-                              {/* TODO: Verify payment gateway integration or checkout session status here if the resource is paid (price > 0) before allowing file download/access */}
-                              <a
-                                href={item.resource.fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-gold)] text-white text-xs font-bold shadow-xs hover:opacity-90 transition-opacity"
-                              >
-                                <Download className="w-3.5 h-3.5" /> Download
-                                File
-                              </a>
+                              <SecureDownloadButton
+                                resourceId={item.resource.id}
+                                userId={user?.id}
+                                email={user?.email}
+                              />
                             </td>
                           </tr>
                         ))}

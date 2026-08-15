@@ -169,7 +169,6 @@ export default async function ResourceDetailPage({ params }: PageProps) {
                   title={resource.title}
                   price={resource.price}
                   userRole={userRole}
-                  fileUrl={resource.fileUrl}
                 />
               </div>
             </div>

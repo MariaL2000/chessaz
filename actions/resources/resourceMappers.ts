@@ -33,7 +33,6 @@ export function mapResourceToDTO(item: any): ResourceDTO {
     hasHomework: item.hasHomework,
     imageUrl: item.previewUrl ? item.previewUrl : "/header.png",
     previewUrl: item.previewUrl ?? undefined,
-    fileUrl: item.fileUrl ?? undefined,
     teacherName: teacherData.name ?? "Verified Coach",
     teacherImage: teacherData.image ?? undefined,
     teacher: item.teacher

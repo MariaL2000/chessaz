@@ -39,6 +39,8 @@ export const ResourceCheckoutModal: React.FC<ResourceCheckoutModalProps> = ({
 
   // 2. Extrae la función verifyResource del store global
   const verifyResource = useGuestStore((state) => state.verifyResource);
+  const getDownloadUrl = useGuestStore((state) => state.getDownloadUrl);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,8 +84,15 @@ export const ResourceCheckoutModal: React.FC<ResourceCheckoutModalProps> = ({
     if (res.ok) {
       setSuccessMessage(res.message);
 
-      // 3. ACTUALIZA ZUSTAND AQUÍ: Guarda el estado de verificación para este recurso y email
-      verifyResource(resourceId, email);
+      verifyResource(
+        resourceId,
+        "accessToken" in res ? res.accessToken : undefined,
+        "downloadUrl" in res ? res.downloadUrl : undefined,
+      );
+
+      if ("downloadUrl" in res && res.downloadUrl) {
+        setDownloadUrl(res.downloadUrl);
+      }
 
       if (price === 0) {
         setStep("success");
@@ -200,6 +209,19 @@ export const ResourceCheckoutModal: React.FC<ResourceCheckoutModalProps> = ({
           <p className="text-xs text-[var(--color-text-muted)]">
             {successMessage}
           </p>
+          {(downloadUrl || getDownloadUrl(resourceId)) && (
+            <CustomButton
+              type="button"
+              variant="gold"
+              className="w-full"
+              onClick={() => {
+                const url = downloadUrl || getDownloadUrl(resourceId);
+                if (url) window.open(url, "_blank");
+              }}
+            >
+              Download Secure File
+            </CustomButton>
+          )}
         </div>
       )}
 

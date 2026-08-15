@@ -6,6 +6,7 @@ import { Resend } from "resend";
 import { z } from "zod";
 import { Role } from "@/app/generated/prisma/client";
 import { cookies } from "next/headers";
+import { grantResourceAccess } from "@/lib/grant-resource-access";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -104,25 +105,18 @@ export async function verifyOtpAndProcessCheckoutAction(
     if (price === 0) {
       const resourceRecord = await prisma.resource.findUnique({
         where: { id: resourceId },
-        select: { title: true, fileUrl: true },
+        select: { title: true },
       });
 
-      const rawFileUrl = resourceRecord?.fileUrl || "";
-      if (!rawFileUrl)
-        return { ok: false, message: "Resource file URL not found." };
+      const access = await grantResourceAccess({
+        email,
+        resourceId,
+        userId: dbUser.id,
+        pricePaid: 0,
+        isFree: true,
+      });
 
-      let secureCloudinaryUrl = rawFileUrl.startsWith("http://")
-        ? rawFileUrl.replace("http://", "https://")
-        : rawFileUrl;
-
-      if (secureCloudinaryUrl.startsWith("/")) {
-        const baseUrl =
-          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-        secureCloudinaryUrl = `${baseUrl}${secureCloudinaryUrl}`;
-      }
-
-      console.log({secureCloudinaryUrl});
-      
+      console.log({access});
 
       await resend.emails.send({
         from:
@@ -134,7 +128,9 @@ export async function verifyOtpAndProcessCheckoutAction(
           <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #d97706;">Thank you for your verification!</h2>
             <p>Your resource <strong>${resourceRecord?.title || "Chess Lesson"}</strong> is ready.</p>
-            <a href="${secureCloudinaryUrl}" style="background: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Download File</a>
+            <p>You can access it for the next <strong>${access.accessDays} days</strong>.</p>
+            <a href="${access.downloadUrl}" style="background: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Download File</a>
+            <p style="font-size: 12px; color: #666; margin-top: 16px;">This link is personal and expires on ${access.expiresAt.toLocaleDateString()}.</p>
           </div>
         `,
       });
@@ -142,7 +138,9 @@ export async function verifyOtpAndProcessCheckoutAction(
       return {
         ok: true,
         isFree: true,
-        fileUrl: secureCloudinaryUrl,
+        accessToken: access.accessToken,
+        downloadUrl: access.downloadUrl,
+        expiresAt: access.expiresAt.toISOString(),
         message: "Verified! Secure download link sent.",
       };
     }
