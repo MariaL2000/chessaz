@@ -10,6 +10,7 @@ import {
   Clock,
   Download,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 import ProfileSettings from "@/components/dashboard/ProfileSettings";
 import { UploadResourceForm } from "@/components/dashboard/UploadResourceForm";
@@ -25,6 +26,7 @@ import {
 } from "@/actions/resources/get-user-purchases";
 import { SecureDownloadButton } from "@/components/resources/SecureDownloadButton";
 import { PayPalConnectCard } from "@/components/dashboard/PayPalConnectCard";
+import { Pagination } from "@/components/pagination/Pagination";
 
 interface TeacherDashboardProps {
   initialUser?: {
@@ -48,6 +50,13 @@ export default function TeacherDashboard({
   const [activeTab, setActiveTab] = useState<string>("market");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+
+  // Leer el número de página actual desde los query params de la URL (?page=1)
+  const searchParams = useSearchParams();
+  const pageParam = searchParams.get("page");
+  const currentPage =
+    pageParam && !isNaN(Number(pageParam)) ? Number(pageParam) : 1;
+  const ITEMS_PER_PAGE = 9;
 
   // Nuevo estado para controlar si se acaba de crear un recurso con éxito
   const [showPendingBanner, setShowPendingBanner] = useState(false);
@@ -129,6 +138,34 @@ export default function TeacherDashboard({
   // Declaración correcta de las categorías para evitar el error de referencia
   const categories = ["ALL", "TACTICS", "OPENINGS", "ENDGAME", "STRATEGY"];
 
+  // --- FILTRADO Y PAGINACIÓN PARA MARKETPLACE ---
+  const filteredMarketResources = allResources
+    .filter((r) => r.isPublished)
+    .filter(
+      (r) => selectedCategory === "ALL" || r.category === selectedCategory,
+    );
+
+  const totalMarketPages = Math.ceil(
+    filteredMarketResources.length / ITEMS_PER_PAGE,
+  );
+  const paginatedMarketResources = filteredMarketResources.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+
+  // --- FILTRADO Y PAGINACIÓN PARA MIS RECURSOS (UPLOADS) ---
+  const filteredTeacherResources = currentTeacherResources.filter(
+    (r) => selectedCategory === "ALL" || r.category === selectedCategory,
+  );
+
+  const totalTeacherPages = Math.ceil(
+    filteredTeacherResources.length / ITEMS_PER_PAGE,
+  );
+  const paginatedTeacherResources = filteredTeacherResources.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+
   return (
     <div className="flex w-full min-h-[calc(100vh-4rem)] bg-[var(--color-bg-beige)] text-[var(--color-text-main)] relative box-border mt-16">
       <DashboardSidebar
@@ -187,24 +224,16 @@ export default function TeacherDashboard({
 
           {activeTab === "profile" && (
             <div className="max-w-4xl space-y-6">
-              <PayPalConnectCard userId={userId} autoSync={initialPaypalReturn} />
+              <PayPalConnectCard
+                userId={userId}
+                autoSync={initialPaypalReturn}
+              />
               <ProfileSettings />
             </div>
           )}
 
           {activeTab === "upload-new" && (
             <div className="max-w-3xl space-y-6">
-              {/* 
-                TODO (Platform Commission Integration):
-                When implementing the server action or payment webhook (Stripe/Checkout) that processes 
-                the sale of a teacher's resource, calculate the earnings split as follows:
-                
-                const adminFee = resource.price * 0.05; // Admin keeps 5% commission
-                const teacherEarnings = resource.price - adminFee; // Teacher gets 95%
-                
-                Save these computed amounts inside your database transaction (e.g., in Purchase or Wallet transaction records) 
-                so the admin wallet reflects the 5% cut and the teacher's earnings dashboard reflects the remainder.
-              */}
               <UploadResourceForm
                 userId={userId}
                 onGoToProfile={() => setActiveTab("profile")}
@@ -312,12 +341,7 @@ export default function TeacherDashboard({
                 </div>
               </div>
 
-              {allResources.filter(
-                (r) =>
-                  r.isPublished &&
-                  (selectedCategory === "ALL" ||
-                    r.category === selectedCategory),
-              ).length === 0 ? (
+              {filteredMarketResources.length === 0 ? (
                 <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-3">
                   <BookOpen className="w-12 h-12 mx-auto text-[var(--color-text-muted)] opacity-50" />
                   <p className="text-lg font-semibold text-[var(--color-text-main)]">
@@ -325,18 +349,15 @@ export default function TeacherDashboard({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-                  {allResources
-                    .filter((r) => r.isPublished)
-                    .filter(
-                      (r) =>
-                        selectedCategory === "ALL" ||
-                        r.category === selectedCategory,
-                    )
-                    .map((resource) => (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+                    {paginatedMarketResources.map((resource) => (
                       <ResourceCard key={resource.id} resource={resource} />
                     ))}
-                </div>
+                  </div>
+                  {/* Componente de Paginación */}
+                  <Pagination totalPages={totalMarketPages} />
+                </>
               )}
             </div>
           )}
@@ -368,35 +389,42 @@ export default function TeacherDashboard({
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-                {currentTeacherResources
-                  .filter(
-                    (r) =>
-                      selectedCategory === "ALL" ||
-                      r.category === selectedCategory,
-                  )
-                  .map((resource) => (
-                    <div key={resource.id} className="relative flex flex-col">
-                      <ResourceCard resource={resource} />
-                      <div className="mt-2 flex items-center justify-between px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-xl text-xs font-semibold">
-                        <span className="text-[var(--color-text-muted)]">
-                          Status:
-                        </span>
-                        <span
-                          className={
-                            resource.isPublished
-                              ? "text-emerald-600 font-bold"
-                              : "text-amber-600 font-bold"
-                          }
-                        >
-                          {resource.isPublished
-                            ? "Approved / Published"
-                            : "Pending admin review"}
-                        </span>
+              {filteredTeacherResources.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-3">
+                  <BookOpen className="w-12 h-12 mx-auto text-[var(--color-text-muted)] opacity-50" />
+                  <p className="text-lg font-semibold text-[var(--color-text-main)]">
+                    You haven&apos;t uploaded any resources yet.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+                    {paginatedTeacherResources.map((resource) => (
+                      <div key={resource.id} className="relative flex flex-col">
+                        <ResourceCard resource={resource} />
+                        <div className="mt-2 flex items-center justify-between px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-xl text-xs font-semibold">
+                          <span className="text-[var(--color-text-muted)]">
+                            Status:
+                          </span>
+                          <span
+                            className={
+                              resource.isPublished
+                                ? "text-emerald-600 font-bold"
+                                : "text-amber-600 font-bold"
+                            }
+                          >
+                            {resource.isPublished
+                              ? "Approved / Published"
+                              : "Pending admin review"}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-              </div>
+                    ))}
+                  </div>
+                  {/* Componente de Paginación */}
+                  <Pagination totalPages={totalTeacherPages} />
+                </>
+              )}
             </div>
           )}
         </div>

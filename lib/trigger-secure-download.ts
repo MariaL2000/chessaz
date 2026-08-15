@@ -5,13 +5,26 @@ export async function triggerSecureDownload(
   const response = await fetch(downloadUrl, { credentials: "same-origin" });
 
   if (!response.ok) {
-    let message = "Unable to download this resource.";
+    let message = `Unable to download this resource (Status ${response.status}).`;
 
     try {
-      const data = (await response.json()) as { error?: string };
-      if (data.error) message = data.error;
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
+      // Intentamos leer el texto de la respuesta primero
+      const errorText = await response.text();
+      try {
+        // Si es JSON, extraemos el campo 'error' o 'message'
+        const data = JSON.parse(errorText) as {
+          error?: string;
+          message?: string;
+        };
+        if (data.error || data.message) {
+          message = data.error || data.message || message;
+        }
+      } catch {
+        // Si no es JSON (es HTML o texto plano), mostramos un resumen en consola
+        console.error("Non-JSON error response from server:", errorText);
+      }
+    } catch (e) {
+      console.error("Error reading response body:", e);
     }
 
     throw new Error(message);

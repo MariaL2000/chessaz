@@ -2,13 +2,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   AlertCircle,
   Menu,
   BookOpen,
   Clock,
-  UploadCloud,
   Globe,
   Download,
 } from "lucide-react";
@@ -24,7 +24,8 @@ import type { ResourceDTO } from "@/types/resource";
 import {
   getUserDownloads,
   DownloadItemDTO,
-} from "@/actions/resources/get-user-purchases"; // Asegúrate de ajustar la ruta de importación
+} from "@/actions/resources/get-user-purchases";
+import { Pagination } from "@/components/pagination/Pagination";
 
 interface AdminDashboardProps {
   initialUser?: {
@@ -47,6 +48,11 @@ export default function AdminDashboard({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [showPendingBanner, setShowPendingBanner] = useState(false);
+
+  // Configuración de Paginación (9 por página)
+  const searchParams = useSearchParams();
+  const page = parseInt(searchParams.get("page") ?? "1");
+  const ITEMS_PER_PAGE = 9;
 
   // Estado para las descargas del sistema (Admin ve todas)
   const [downloads, setDownloads] = useState<DownloadItemDTO[]>([]);
@@ -114,6 +120,24 @@ export default function AdminDashboard({
 
   const currentAllResources =
     recentResources.length > 0 ? recentResources : initialAllResources;
+
+  // Listas filtradas y paginadas para Pendientes y Market
+  const paginatedPending = currentPendingResources.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE,
+  );
+  const totalPendingPages = Math.ceil(
+    currentPendingResources.length / ITEMS_PER_PAGE,
+  );
+
+  const filteredMarket = currentAllResources.filter(
+    (r) => selectedCategory === "ALL" || r.category === selectedCategory,
+  );
+  const paginatedMarket = filteredMarket.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE,
+  );
+  const totalMarketPages = Math.ceil(filteredMarket.length / ITEMS_PER_PAGE);
 
   const [toast] = useState<{
     type: "success" | "error";
@@ -198,21 +222,24 @@ export default function AdminDashboard({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-                  {currentPendingResources.map((resource) => (
-                    <div key={resource.id} className="relative flex flex-col">
-                      <ResourceCard resource={resource} />
-                      <div className="mt-2 flex items-center justify-between px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-semibold">
-                        <span className="text-amber-700/80 flex items-center gap-2">
-                          <Clock className="w-4 h-4" /> Action Required
-                        </span>
-                        <span className="text-amber-700 font-bold">
-                          Pending
-                        </span>
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+                    {paginatedPending.map((resource) => (
+                      <div key={resource.id} className="relative flex flex-col">
+                        <ResourceCard resource={resource} />
+                        <div className="mt-2 flex items-center justify-between px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-semibold">
+                          <span className="text-amber-700/80 flex items-center gap-2">
+                            <Clock className="w-4 h-4" /> Action Required
+                          </span>
+                          <span className="text-amber-700 font-bold">
+                            Pending
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                  <Pagination totalPages={totalPendingPages} />
+                </>
               )}
             </div>
           )}
@@ -319,10 +346,7 @@ export default function AdminDashboard({
                 </div>
               </div>
 
-              {currentAllResources.filter(
-                (r) =>
-                  selectedCategory === "ALL" || r.category === selectedCategory,
-              ).length === 0 ? (
+              {filteredMarket.length === 0 ? (
                 <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-3">
                   <BookOpen className="w-12 h-12 mx-auto text-[var(--color-text-muted)] opacity-50" />
                   <p className="text-lg font-semibold text-[var(--color-text-main)]">
@@ -330,14 +354,9 @@ export default function AdminDashboard({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-                  {currentAllResources
-                    .filter(
-                      (r) =>
-                        selectedCategory === "ALL" ||
-                        r.category === selectedCategory,
-                    )
-                    .map((resource) => (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+                    {paginatedMarket.map((resource) => (
                       <div key={resource.id} className="relative flex flex-col">
                         <ResourceCard resource={resource} />
                         <div className="mt-2 flex items-center justify-between px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-xl text-xs font-semibold">
@@ -356,7 +375,9 @@ export default function AdminDashboard({
                         </div>
                       </div>
                     ))}
-                </div>
+                  </div>
+                  <Pagination totalPages={totalMarketPages} />
+                </>
               )}
             </div>
           )}

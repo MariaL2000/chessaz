@@ -1,8 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import {
-  buildDownloadFilename,
-  fetchSignedResource,
-} from "@/lib/cloudinary";
+import { buildDownloadFilename, fetchSignedResource } from "@/lib/cloudinary";
 import {
   getSignedUrlTtlSeconds,
   verifyResourceAccessToken,

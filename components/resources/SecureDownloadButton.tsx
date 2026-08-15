@@ -32,7 +32,11 @@ export function SecureDownloadButton({
       });
 
       if (result.ok) {
-        await triggerSecureDownload(result.downloadUrl, label);
+        // Forzamos a TypeScript a reconocer que este objeto contiene downloadUrl
+        await triggerSecureDownload(
+          (result as { downloadUrl: string }).downloadUrl,
+          label,
+        );
         return;
       }
 
