@@ -24,7 +24,6 @@ export const BrowseLessons = () => {
   const [selectedType, setSelectedType] = React.useState<string>("ALL");
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Sincronizamos con Zustand solo si no hay datos cargados o para refrescar de forma inteligente
   useEffect(() => {
     if (recentResources.length === 0) {
       fetchRecentResources(10);
@@ -65,11 +64,37 @@ export const BrowseLessons = () => {
           </p>
         </div>
 
-        <Link
-          href="/lessons"
-          className="text-xs font-bold flex items-center gap-1.5 transition-all text-[var(--color-gold)] hover:text-[var(--color-gold-hover)] hover:underline shrink-0"
-        >
-          View all lessons <ArrowRight className="w-4 h-4" />
+        {/* Botón superior modernizado con back.png y texto blanco */}
+        <Link href="/lessons">
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="relative px-5 py-2.5 rounded-full overflow-hidden flex items-center gap-2 shadow-md cursor-pointer shrink-0 border border-white/20 group"
+          >
+            <div className="absolute inset-0">
+              <Image
+                src="/back.png"
+                alt="Background"
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] group-hover:bg-black/40 transition-colors" />
+            </div>
+            <span className="relative z-10 text-xs font-bold text-white tracking-wide">
+              View all lessons
+            </span>
+            <motion.span
+              className="relative z-10 text-white"
+              animate={{ x: [0, 4, 0] }}
+              transition={{
+                repeat: Infinity,
+                duration: 1.5,
+                ease: "easeInOut",
+              }}
+            >
+              <ArrowRight className="w-4 h-4" />
+            </motion.span>
+          </motion.div>
         </Link>
       </div>
 
@@ -139,7 +164,10 @@ export const BrowseLessons = () => {
         >
           {filteredLessons.length > 0 ? (
             filteredLessons.map((lesson) => (
-              <div key={lesson.id} className="inline-block">
+              <div
+                key={lesson.id}
+                className="flex-shrink-0 w-[280px] sm:w-[310px] inline-block"
+              >
                 <ResourceCard resource={lesson} />
               </div>
             ))
@@ -151,22 +179,23 @@ export const BrowseLessons = () => {
             </div>
           )}
 
+          {/* Tarjeta Extra al final del carrusel con la imagen more.png */}
           <motion.div
             whileHover={{ y: -6 }}
             onClick={() => (window.location.href = "/lessons")}
-            className="flex-shrink-0 w-[280px] sm:w-[310px] rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden text-white bg-[var(--color-blue)] shadow-md cursor-pointer"
+            className="flex-shrink-0 w-[280px] sm:w-[310px] rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden text-white bg-[var(--color-blue)] shadow-md cursor-pointer group"
           >
-            <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
+            <div className="absolute inset-0 opacity-25 group-hover:opacity-40 transition-opacity">
               <Image
-                src="https://images.unsplash.com/photo-1528819622765-d6bcf132f793?auto=format&fit=crop&w=800&q=80"
-                alt="Marketplace"
+                src="/more.png"
+                alt="More Marketplace"
                 fill
                 sizes="(max-width: 768px) 100vw, 310px"
-                className="object-cover"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
             </div>
             <div className="relative z-10">
-              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center mb-4 border border-white/10">
                 <BookOpen className="w-5 h-5 text-[var(--color-gold-light)]" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-white">
@@ -182,7 +211,7 @@ export const BrowseLessons = () => {
               <Link href="/lessons" className="w-full block">
                 <button
                   type="button"
-                  className="w-full py-2 px-4 rounded-md font-bold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hover)] text-white border-none shadow-md transition-colors cursor-pointer text-center"
+                  className="w-full py-2 px-4 rounded-md font-bold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hover)] text-white border-none shadow-md transition-colors cursor-pointer text-center text-xs"
                 >
                   EXPLORE ALL LESSONS
                 </button>

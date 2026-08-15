@@ -12,6 +12,15 @@ export const FinalCTA = () => {
       className="py-20 sm:py-28 px-6 sm:px-8 md:px-16 relative overflow-hidden m-0 flex items-center justify-center border-t border-[var(--color-gold)]/20"
       style={{ backgroundColor: "var(--color-blue)" }}
     >
+      {/* Background Image Layer with adjusted opacity */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/ai.png"
+          alt="AI Background"
+          className="w-full h-full object-cover opacity-25"
+        />
+      </div>
+
       <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center w-full">
         {/* Reutilizando el SectionHeader moderno y simple */}
         <SectionHeader

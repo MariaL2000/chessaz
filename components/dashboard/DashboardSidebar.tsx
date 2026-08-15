@@ -60,7 +60,7 @@ export default function DashboardSidebar({
       ];
     }
 
-    // TEACHER / CREATOR (Incluye Earnings / wallet)
+    // TEACHER / CREATOR
     return [
       {
         section: "My Account",

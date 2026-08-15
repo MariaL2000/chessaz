@@ -71,7 +71,6 @@ export const Header = () => {
             <span className="italic" style={{ color: "var(--color-blue)" }}>
               lessons
             </span>
-            .
             <br />
             Stronger students
             <br />

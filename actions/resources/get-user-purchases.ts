@@ -1,18 +1,19 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { Role } from "@/app/generated/prisma/client";
 
-//listar los recursos descargados
 export interface DownloadItemDTO {
   id: string;
   pricePaid: number;
   isFree: boolean;
   createdAt: Date;
   user: {
-    name: string | null;
-    email: string | null;
+    name: string;
+    email: string;
     role: string;
   };
+  guestEmail: string;
   resource: {
     id: string;
     title: string;
@@ -24,22 +25,49 @@ export interface DownloadItemDTO {
 }
 
 /**
- * Obtiene las descargas del sitio.
- * - Si es ADMIN, devuelve TODAS las descargas de la plataforma (para el panel de Admin).
+ * Obtiene el historial de descargas del panel de control.
+ * - ADMIN: Ve todas las descargas globales de la plataforma.
+ * - TEACHER: Ve únicamente las descargas asociadas a los recursos creados por su TeacherProfile.
  */
 export async function getUserDownloads(
-  userId?: string,
-  userRole?: "ADMIN" | "TEACHER" | string,
-): Promise<{ ok: boolean; downloads: DownloadItemDTO[]; message?: string }> {
+  userId: string,
+  userRole: Role | string,
+): Promise<{
+  ok: boolean;
+  downloads: DownloadItemDTO[];
+  totalAmountPaid: number;
+  totalDownloads: number;
+  message?: string;
+}> {
   try {
-    const isAdmin = userRole === "ADMIN";
-
-    // Si no es admin, filtramos estrictamente por el userId del usuario actual
-    const whereClause = isAdmin ? {} : { userId: userId || "" };
-
-    if (!isAdmin && (!userId || userId.trim() === "")) {
-      return { ok: true, downloads: [] };
+    // 1. Validación de seguridad estricta
+    if (
+      !userId ||
+      !userRole ||
+      (userRole !== Role.ADMIN && userRole !== Role.TEACHER)
+    ) {
+      return {
+        ok: false,
+        downloads: [],
+        totalAmountPaid: 0,
+        totalDownloads: 0,
+        message: "Unauthorized access.",
+      };
     }
+
+    const isAdmin = userRole === Role.ADMIN;
+
+    // 2. Definición del filtro basado en tu relación de Prisma:
+    // Resource -> TeacherProfile (donde teacher.userId === userId)
+    const whereClause = isAdmin
+      ? {}
+      : {
+          resource: {
+            teacher: {
+              userId: userId,
+            },
+          },
+        };
 
     const downloads = await prisma.download.findMany({
       where: whereClause,
@@ -63,19 +91,30 @@ export async function getUserDownloads(
         },
       },
       orderBy: {
-        createdAt: "desc", // Ordenadas de más reciente a más antigua
+        createdAt: "desc",
       },
     });
+
+    // 3. Sumar los montos reales pagados de la lista obtenida (tanto de pagos como de compras libres con valor)
+    const totalAmountPaid = downloads.reduce(
+      (acc, curr) => acc + (curr.pricePaid || 0),
+      0,
+    );
+    const totalDownloads = downloads.length;
 
     return {
       ok: true,
       downloads: downloads as DownloadItemDTO[],
+      totalAmountPaid,
+      totalDownloads,
     };
   } catch (error) {
-    console.error("Error fetching user downloads:", error);
+    console.error("Error fetching downloads history:", error);
     return {
       ok: false,
       downloads: [],
+      totalAmountPaid: 0,
+      totalDownloads: 0,
       message: "Failed to retrieve downloads history.",
     };
   }

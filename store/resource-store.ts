@@ -43,7 +43,7 @@ export const useResourceStore = create<ResourceState>()(
       hasHydrated: false,
       setHasHydrated: (state: boolean) => set({ hasHydrated: state }),
 
-      fetchRecentResources: async (limit = 15) => {
+      fetchRecentResources: async (limit = 10) => {
         const res = await getRecentResources(limit);
         if (res.ok) {
           set({ recentResources: res.resources });

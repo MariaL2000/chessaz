@@ -26,7 +26,7 @@ export async function getAuthorizedDownloadUrl(
   }
 
   let email = options?.email;
-  let userId = options?.userId;
+  const userId = options?.userId;
   let role: Role | undefined;
 
   if (userId) {
@@ -101,6 +101,7 @@ export async function getAuthorizedDownloadUrl(
 
   return {
     ok: false,
-    message: "Access expired or not found. Please verify your email or purchase again.",
+    message:
+      "Access expired or not found. Please verify your email or purchase again.",
   };
 }

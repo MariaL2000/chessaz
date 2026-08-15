@@ -9,6 +9,10 @@ import {
   BookOpen,
   Clock,
   Download,
+  DollarSign,
+  TrendingUp,
+  ShoppingBag,
+  Percent,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
@@ -24,6 +28,7 @@ import {
   getUserDownloads,
   DownloadItemDTO,
 } from "@/actions/resources/get-user-purchases";
+import { getFinancialEarnings } from "@/actions/sales/getFinancialEarnings";
 import { SecureDownloadButton } from "@/components/resources/SecureDownloadButton";
 import { PayPalConnectCard } from "@/components/dashboard/PayPalConnectCard";
 import { Pagination } from "@/components/pagination/Pagination";
@@ -65,6 +70,16 @@ export default function TeacherDashboard({
   const [downloads, setDownloads] = useState<DownloadItemDTO[]>([]);
   const [isLoadingDownloads, setIsLoadingDownloads] = useState(false);
 
+  // Estados para la pestaña de ganancias/wallet del profesor
+  const [salesData, setSalesData] = useState<any[]>([]);
+  const [financialMetrics, setFinancialMetrics] = useState({
+    totalGross: 0,
+    totalPlatformFee: 0,
+    totalTeacherEarnings: 0,
+    salesCount: 0,
+  });
+  const [isLoadingEarnings, setIsLoadingEarnings] = useState(false);
+
   const { user, setUser } = useAuthStore();
 
   useEffect(() => {
@@ -80,6 +95,7 @@ export default function TeacherDashboard({
   }, [initialUser, setUser]);
 
   const userId = user?.id || initialUser?.id || "";
+  const userRole = user?.role || initialUser?.role || "TEACHER";
 
   const {
     recentResources,
@@ -123,6 +139,36 @@ export default function TeacherDashboard({
       };
     }
   }, [activeTab, userId]);
+
+  // Cargar las ganancias del profesor cuando hace clic en la pestaña "wallet"
+  useEffect(() => {
+    if (activeTab === "wallet" && userId) {
+      let isMounted = true;
+
+      const fetchEarnings = async () => {
+        setIsLoadingEarnings(true);
+        try {
+          const res = await getFinancialEarnings(userId, userRole);
+          if (res.ok && isMounted) {
+            setSalesData(res.sales);
+            setFinancialMetrics(res.metrics);
+          }
+        } catch (error) {
+          console.error("Error loading financial earnings:", error);
+        } finally {
+          if (isMounted) {
+            setIsLoadingEarnings(false);
+          }
+        }
+      };
+
+      fetchEarnings();
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [activeTab, userId, userRole]);
 
   const allResources =
     recentResources.length > 0 ? recentResources : initialMarketResources;
@@ -314,6 +360,156 @@ export default function TeacherDashboard({
                     </table>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "wallet" && (
+            <div className="space-y-6">
+              {isLoadingEarnings ? (
+                <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)]">
+                  <p className="text-sm text-[var(--color-text-muted)]">
+                    Loading your financial summary...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Tarjetas de Métricas de Ganancias */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] p-5 rounded-2xl shadow-xs space-y-2">
+                      <div className="flex items-center justify-between text-[var(--color-text-muted)]">
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          Net Earnings
+                        </span>
+                        <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl">
+                          <DollarSign className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-extrabold text-[var(--color-text-main)]">
+                        ${financialMetrics.totalTeacherEarnings.toFixed(2)}
+                      </div>
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        Your total net revenue share
+                      </p>
+                    </div>
+
+                    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] p-5 rounded-2xl shadow-xs space-y-2">
+                      <div className="flex items-center justify-between text-[var(--color-text-muted)]">
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          Gross Sales
+                        </span>
+                        <div className="p-2 bg-[var(--color-gold-light)] text-[var(--color-gold)] rounded-xl">
+                          <TrendingUp className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-extrabold text-[var(--color-text-main)]">
+                        ${financialMetrics.totalGross.toFixed(2)}
+                      </div>
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        Total sales volume generated
+                      </p>
+                    </div>
+
+                    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] p-5 rounded-2xl shadow-xs space-y-2">
+                      <div className="flex items-center justify-between text-[var(--color-text-muted)]">
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          Platform Fees
+                        </span>
+                        <div className="p-2 bg-amber-500/10 text-amber-600 rounded-xl">
+                          <Percent className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-extrabold text-[var(--color-text-main)]">
+                        ${financialMetrics.totalPlatformFee.toFixed(2)}
+                      </div>
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        Platform service commissions
+                      </p>
+                    </div>
+
+                    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] p-5 rounded-2xl shadow-xs space-y-2">
+                      <div className="flex items-center justify-between text-[var(--color-text-muted)]">
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          Total Sales
+                        </span>
+                        <div className="p-2 bg-blue-500/10 text-blue-600 rounded-xl">
+                          <ShoppingBag className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-extrabold text-[var(--color-text-main)]">
+                        {financialMetrics.salesCount}
+                      </div>
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        Successful customer orders
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tabla de Historial de Ventas */}
+                  {salesData.length === 0 ? (
+                    <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-3">
+                      <ShoppingBag className="w-12 h-12 mx-auto text-[var(--color-text-muted)] opacity-50" />
+                      <p className="text-lg font-semibold text-[var(--color-text-main)]">
+                        No sales recorded yet.
+                      </p>
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        When students purchase your resources, your earnings
+                        will appear here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-2xl overflow-hidden shadow-xs">
+                      <div className="p-4 border-b border-[var(--color-border-custom)] font-bold text-sm">
+                        Sales History
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="border-b border-[var(--color-border-custom)] bg-[var(--color-gold-light)]/30 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                              <th className="p-4">Resource</th>
+                              <th className="p-4">Buyer</th>
+                              <th className="p-4">Gross</th>
+                              <th className="p-4">Fee</th>
+                              <th className="p-4">Your Earnings</th>
+                              <th className="p-4">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--color-border-custom)] text-sm">
+                            {salesData.map((sale) => (
+                              <tr
+                                key={sale.id}
+                                className="hover:bg-[var(--color-gold-light)]/10 transition-colors"
+                              >
+                                <td className="p-4 font-semibold text-[var(--color-text-main)]">
+                                  {sale.purchase?.resource?.title || "N/A"}
+                                </td>
+                                <td className="p-4 text-xs text-[var(--color-text-muted)]">
+                                  {sale.purchase?.user?.name ||
+                                    sale.purchase?.user?.email ||
+                                    "Anonymous"}
+                                </td>
+                                <td className="p-4 font-bold">
+                                  ${sale.grossAmount?.toFixed(2) || "0.00"}
+                                </td>
+                                <td className="p-4 text-xs text-amber-600">
+                                  -${sale.platformFee?.toFixed(2) || "0.00"}
+                                </td>
+                                <td className="p-4 font-extrabold text-emerald-600">
+                                  +${sale.teacherEarnings?.toFixed(2) || "0.00"}
+                                </td>
+                                <td className="p-4 text-xs text-[var(--color-text-muted)]">
+                                  {new Date(
+                                    sale.createdAt,
+                                  ).toLocaleDateString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

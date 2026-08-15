@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Check, Camera, Cpu, ArrowRight, Clock } from "lucide-react";
+import { Check, Cpu, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "../ui/Button";
 import SectionHeader from "../ui/Title";
 
@@ -11,7 +11,7 @@ export const CreatorAndAI = () => {
   return (
     <section
       id="elevate-your-chess-coaching"
-      className="py-20 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto overflow-hidden"
+      className="py-24 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto overflow-hidden relative"
     >
       <SectionHeader
         title="Elevate Your Chess Coaching"
@@ -19,240 +19,153 @@ export const CreatorAndAI = () => {
         center={true}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch mt-12">
-        {/* Banner Izquierdo: Creadores (Teachers / Coaches) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch mt-12 relative z-10">
+        {/* Left Banner: Creators */}
         <motion.div
-          className="rounded-[2.5rem] p-8 sm:p-10 md:p-12 text-white flex flex-col justify-between relative overflow-hidden shadow-2xl border border-white/10"
+          className="rounded-[2.5rem] p-8 sm:p-12 text-white flex flex-col justify-between relative overflow-hidden shadow-2xl border border-white/10"
           style={{ backgroundColor: "var(--color-blue)" }}
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* Imagen de fondo learn.PNG */}
           <div className="absolute inset-0 z-0 pointer-events-none">
             <img
               src="/learn.png"
               alt="Chess Creator Background"
-              className="w-full h-full object-cover opacity-50 scale-105 transition-transform duration-1000 hover:scale-100"
+              className="w-full h-full object-cover opacity-30 scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-blue)] via-[var(--color-blue)/80] to-transparent" />
           </div>
 
           <div className="relative z-10">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="w-16 h-16 rounded-2xl mb-8 flex items-center justify-center shadow-lg backdrop-blur-xl border border-white/20"
-              style={{ backgroundColor: "rgba(183, 147, 71, 0.25)" }}
-            >
-              <span className="text-3xl">👑</span>
-            </motion.div>
+            {/* Raw Logo Display */}
+            <div className="mb-8">
+              <img
+                src="/logo.png"
+                alt="Logo"
+                className="w-16 h-16 object-contain brightness-0 invert drop-shadow-lg"
+              />
+            </div>
 
-            <span
-              className="text-xs uppercase font-extrabold tracking-widest px-4 py-1.5 rounded-full border mb-6 inline-block backdrop-blur-md shadow-sm"
-              style={{
-                color: "var(--color-gold)",
-                borderColor: "rgba(183, 147, 71, 0.4)",
-                backgroundColor: "rgba(0, 0, 0, 0.5)",
-              }}
-            >
+            <span className="text-xs uppercase font-extrabold tracking-widest px-4 py-1.5 rounded-full border border-[var(--color-gold)]/40 bg-white/10 text-[var(--color-gold)] mb-6 inline-block">
               For Coaches & Masters
             </span>
 
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 tracking-tight leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">
               Join & Teach for Free
             </h2>
-            <p className="text-sm sm:text-base text-gray-300 mb-8 leading-relaxed font-light">
-              Log in for free today to share your courses, opening repertoires,
-              and masterclasses with ambitious players worldwide while earning
-              revenue.
-            </p>
 
-            <ul className="space-y-4 text-sm text-gray-200 mb-10 font-normal">
+            <ul className="space-y-4 text-sm text-gray-200 mb-10">
               {[
-                "Log in completely free and setup your profile in minutes",
-                "Upload unlimited masterclasses, guides, and student exercises",
-                "Earn competitive commissions on every resource sold",
-                "Advanced analytics to monitor your stats and earnings",
+                "Setup your professional profile in minutes",
+                "Upload unlimited masterclasses and exercises",
+                "Earn competitive commissions on every sale",
+                "Real-time analytics for your revenue",
               ].map((item, idx) => (
-                <motion.li
-                  key={idx}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.3 + idx * 0.1, duration: 0.5 }}
-                  className="flex items-center gap-3.5"
-                >
-                  <div
-                    className="p-1.5 rounded-full shrink-0 shadow-sm"
-                    style={{
-                      backgroundColor: "rgba(183, 147, 71, 0.25)",
-                      color: "var(--color-gold)",
-                    }}
-                  >
-                    <Check className="w-4 h-4 stroke-[2.5]" />
-                  </div>
+                <li key={idx} className="flex items-center gap-3">
+                  <Check
+                    className="w-5 h-5"
+                    style={{ color: "var(--color-gold)" }}
+                  />
                   <span>{item}</span>
-                </motion.li>
+                </li>
               ))}
             </ul>
           </div>
 
-          <div className="relative z-10 pt-4">
+          <div className="relative z-10">
             <Link href="/login">
               <Button
-                variant="login"
-                size="md"
-                className="w-full sm:w-fit group shadow-xl justify-center cursor-pointer px-8 py-3.5 rounded-2xl font-semibold tracking-wide transition-transform active:scale-95"
+                className="w-full sm:w-fit group shadow-xl px-8 py-4 rounded-2xl font-bold transition-all"
+                style={{ backgroundColor: "var(--color-gold)", color: "#000" }}
               >
-                Log in
-                <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1.5" />
+                Get Started
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>
         </motion.div>
 
-        {/* Banners Derechos: AI Analysis & Photo to PGN */}
-        <div className="flex flex-col gap-6 justify-between">
-          {/* AI Analysis */}
-          <motion.div
-            className="rounded-[2.5rem] p-8 sm:p-10 border shadow-lg flex flex-col justify-between relative overflow-hidden flex-1 group"
-            style={{
-              backgroundColor: "var(--color-bg-card)",
-              borderColor: "var(--color-border-custom)",
-            }}
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {/* Imagen ai.PNG totalmente visible y nítida */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
-              <img
-                src="/ai.png"
-                alt="AI Analysis Background"
-                className="w-full h-full object-cover opacity-60 scale-105 transition-transform duration-1000 group-hover:scale-100"
+        {/* Right Banner: AI & Scanner */}
+        <motion.div
+          className="rounded-[2.5rem] p-8 sm:p-12 border shadow-2xl flex flex-col justify-center items-center text-center relative overflow-hidden"
+          style={{
+            backgroundColor: "var(--color-bg-card)",
+            borderColor: "var(--color-border-custom)",
+          }}
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="relative z-10 flex flex-col items-center">
+            <div
+              className="mb-8 p-4 rounded-3xl shadow-inner"
+              style={{ backgroundColor: "var(--color-gold-light)" }}
+            >
+              <Cpu
+                className="w-12 h-12"
+                style={{ color: "var(--color-gold)" }}
               />
-              {/* Degradado muy suave abajo para asegurar contraste del texto sin blanquear */}
-              <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/40 to-transparent dark:from-zinc-950/90 dark:via-zinc-950/40" />
             </div>
 
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-                <h3
-                  className="text-2xl sm:text-3xl font-extrabold flex items-center gap-4 tracking-tight"
-                  style={{ color: "var(--color-text-main)" }}
-                >
-                  <div
-                    className="p-3 rounded-2xl shadow-md border shrink-0 backdrop-blur-md bg-white/80 dark:bg-zinc-900/80"
-                    style={{ borderColor: "var(--color-border-custom)" }}
-                  >
-                    <Cpu
-                      className="w-6 h-6 sm:w-7 sm:h-7"
-                      style={{ color: "var(--color-gold)" }}
-                    />
-                  </div>
-                  AI Game Analysis
-                </h3>
-                <span className="text-[11px] uppercase font-bold tracking-wider px-3.5 py-1.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 flex items-center gap-2 shadow-xs backdrop-blur-md">
-                  <Clock className="w-3.5 h-3.5 animate-spin" /> Próximamente
-                </span>
-              </div>
-
-              <p
-                className="text-sm sm:text-base mb-8 leading-relaxed font-medium bg-white/60 dark:bg-black/50 p-3 rounded-xl backdrop-blur-xs"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                Let our cutting-edge neural chess engine break down your matches
-                move by move to pinpoint tactical blindspots.
-              </p>
-
-              <ul className="space-y-3.5 text-sm mb-8 font-semibold text-zinc-800 dark:text-zinc-200">
-                {[
-                  "Explore the finest curated chess lessons organized by skill level",
-                  "Choose from master-led courses, tactical guides, and free resources",
-                  "Filter by ELO ratings, categories, homework, and pricing",
-                  "Boost your strategic vision and elevate your game at your own pace",
-                ].map((item, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-center gap-3.5 bg-white/40 dark:bg-black/30 p-2 rounded-lg backdrop-blur-2xs"
-                  >
-                    <Check
-                      className="w-4 h-4 shrink-0 stroke-[3]"
-                      style={{ color: "var(--color-gold)" }}
-                    />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="relative z-10 pt-2">
-              <Button
-                variant="login"
-                size="sm"
-                disabled
-                className="w-full sm:w-fit shadow-xs justify-center opacity-60 cursor-not-allowed rounded-xl px-6 py-2.5 font-semibold"
-              >
-                Working on...
-              </Button>
-            </div>
-          </motion.div>
-
-          {/* Photo to PGN (OCR) */}
-          <motion.div
-            className="rounded-[2.5rem] p-8 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative overflow-hidden shadow-lg group"
-            style={{
-              backgroundColor: "var(--color-gold-light)",
-              borderColor: "var(--color-border-custom)",
-            }}
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {/* Imagen photo.PNG totalmente visible y nítida */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
+            {/* Animated Chess Piece */}
+            <motion.div
+              className="mb-8"
+              animate={{
+                y: [0, -15, 0],
+                rotate: [0, 5, -5, 0],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
               <img
-                src="/photo.png"
-                alt="Photo to PGN Background"
-                className="w-full h-full object-cover opacity-60 scale-105 transition-transform duration-1000 group-hover:scale-100"
+                src="/piece.png"
+                alt="Chess Piece"
+                className="w-24 h-24 sm:w-32 sm:h-32 object-contain drop-shadow-2xl"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-transparent dark:from-zinc-950/80 dark:via-zinc-950/40" />
-            </div>
+            </motion.div>
 
-            <div className="flex items-start sm:items-center gap-5 relative z-10 w-full">
-              <div className="p-4 bg-white/90 dark:bg-zinc-900/90 rounded-2xl shadow-lg border border-black/5 shrink-0 backdrop-blur-md">
-                <Camera
-                  className="w-7 h-7"
-                  style={{ color: "var(--color-gold)" }}
-                />
-              </div>
-              <div className="flex-1">
-                <span
-                  className="text-[11px] uppercase font-bold tracking-widest px-3 py-1 rounded-md bg-white/95 dark:bg-black/60 inline-block mb-2 shadow-xs"
-                  style={{ color: "var(--color-gold)" }}
-                >
-                  Comming soon • Powered by AI
-                </span>
-                <h4
-                  className="text-lg font-extrabold tracking-tight"
-                  style={{ color: "var(--color-text-main)" }}
-                >
-                  Photo to PGN Converter
-                </h4>
-                <p className="text-xs sm:text-sm mt-1 leading-relaxed font-medium text-zinc-700 dark:text-zinc-300">
-                  Convert physical board captures instantly into digital
-                  notation files.
-                </p>
-              </div>
+            <h3
+              className="text-3xl font-extrabold mb-4"
+              style={{ color: "var(--color-text-main)" }}
+            >
+              Next-Gen AI Analysis
+            </h3>
+            <p
+              className="max-w-md mb-6 leading-relaxed"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              We are currently training a high-precision{" "}
+              <strong>OCR Scanner</strong>. Soon, you will be able to capture
+              any physical board position and instantly convert it into digital
+              PGN notation using our cutting-edge neural engine.
+            </p>
+
+            <div
+              className="px-4 py-2 rounded-full border flex items-center gap-2"
+              style={{
+                backgroundColor: "var(--color-gold-light)",
+                borderColor: "var(--color-gold)",
+              }}
+            >
+              <Sparkles
+                className="w-4 h-4"
+                style={{ color: "var(--color-gold)" }}
+              />
+              <span
+                className="text-xs font-bold uppercase tracking-widest"
+                style={{ color: "var(--color-gold)" }}
+              >
+                Coming Soon
+              </span>
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

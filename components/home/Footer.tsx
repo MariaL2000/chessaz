@@ -80,7 +80,7 @@ export const Footer = () => {
                 elegance.
               </p>
 
-              <div className="flex items-center gap-3 pt-2">
+              {/* <div className="flex items-center gap-3 pt-2">
                 {[
                   {
                     label: "YouTube",
@@ -113,7 +113,7 @@ export const Footer = () => {
                     </svg>
                   </motion.a>
                 ))}
-              </div>
+              </div>*/}
             </motion.div>
 
             {/* Columna: Product */}

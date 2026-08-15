@@ -81,7 +81,7 @@ export default function LearnPage() {
           <div className="relative group overflow-hidden rounded-2xl border border-[var(--color-border-custom)] shadow-md">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/table.png"
+              src="/example.png"
               alt="Chessaz AI Analysis Dashboard"
               className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-500"
             />

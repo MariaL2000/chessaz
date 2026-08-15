@@ -11,6 +11,10 @@ import {
   Clock,
   Globe,
   Download,
+  Wallet,
+  DollarSign,
+  TrendingUp,
+  Percent,
 } from "lucide-react";
 
 import ProfileSettings from "@/components/dashboard/ProfileSettings";
@@ -25,6 +29,7 @@ import {
   getUserDownloads,
   DownloadItemDTO,
 } from "@/actions/resources/get-user-purchases";
+import { getFinancialEarnings } from "@/actions/sales/getFinancialEarnings";
 import { Pagination } from "@/components/pagination/Pagination";
 
 interface AdminDashboardProps {
@@ -47,16 +52,36 @@ export default function AdminDashboard({
   const [activeTab, setActiveTab] = useState<string>("pending-resources");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-  const [showPendingBanner, setShowPendingBanner] = useState(false);
+  const [, setShowPendingBanner] = useState(false);
 
   // Configuración de Paginación (9 por página)
   const searchParams = useSearchParams();
   const page = parseInt(searchParams.get("page") ?? "1");
   const ITEMS_PER_PAGE = 9;
 
-  // Estado para las descargas del sistema (Admin ve todas)
+  // Estado para las descargas del sistema
   const [downloads, setDownloads] = useState<DownloadItemDTO[]>([]);
   const [isLoadingDownloads, setIsLoadingDownloads] = useState(false);
+
+  // Estado para el Control Financiero (Ventas y Comisiones)
+  const [financialData, setFinancialData] = useState<{
+    sales: any[];
+    metrics: {
+      totalGross: number;
+      totalPlatformFee: number;
+      totalTeacherEarnings: number;
+      salesCount: number;
+    };
+  }>({
+    sales: [],
+    metrics: {
+      totalGross: 0,
+      totalPlatformFee: 0,
+      totalTeacherEarnings: 0,
+      salesCount: 0,
+    },
+  });
+  const [isLoadingFinancials, setIsLoadingFinancials] = useState(false);
 
   const { user, setUser } = useAuthStore();
 
@@ -86,7 +111,7 @@ export default function AdminDashboard({
     fetchRecentResources(50);
   }, [fetchPendingResources, fetchRecentResources]);
 
-  // Cargar las descargas globales cuando se abre la pestaña "library"
+  // Cargar las descargas globales
   useEffect(() => {
     if (activeTab === "library" && userId) {
       let isMounted = true;
@@ -115,13 +140,44 @@ export default function AdminDashboard({
     }
   }, [activeTab, userId]);
 
+  // Cargar el control financiero al seleccionar la pestaña "wallet"
+  useEffect(() => {
+    if (activeTab === "wallet" && userId) {
+      let isMounted = true;
+
+      const fetchFinancials = async () => {
+        setIsLoadingFinancials(true);
+        try {
+          const res = await getFinancialEarnings(userId, "ADMIN");
+          if (res.ok && isMounted) {
+            setFinancialData({
+              sales: res.sales,
+              metrics: res.metrics,
+            });
+          }
+        } catch (error) {
+          console.error("Error loading financial earnings:", error);
+        } finally {
+          if (isMounted) {
+            setIsLoadingFinancials(false);
+          }
+        }
+      };
+
+      fetchFinancials();
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [activeTab, userId]);
+
   const currentPendingResources =
     pendingResources.length > 0 ? pendingResources : initialPendingResources;
 
   const currentAllResources =
     recentResources.length > 0 ? recentResources : initialAllResources;
 
-  // Listas filtradas y paginadas para Pendientes y Market
   const paginatedPending = currentPendingResources.slice(
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE,
@@ -195,6 +251,7 @@ export default function AdminDashboard({
                   "Pending Resources Review"}
                 {activeTab === "market" && "Chess Resource Marketplace"}
                 {activeTab === "library" && "Platform Downloads History"}
+                {activeTab === "wallet" && "Financial Overview & Earnings"}
                 {activeTab === "profile" && "Profile Settings"}
                 {activeTab === "community-resources" && "Community Resources"}
                 {activeTab === "upload-resource" && "Upload Resource"}
@@ -244,7 +301,143 @@ export default function AdminDashboard({
             </div>
           )}
 
-          {/* Sección de Downloads para el Admin */}
+          {/* ======================================================== */}
+          {/* CONTROL FINANCIERO (EARNINGS / WALLET) PARA EL ADMIN     */}
+          {/* ======================================================== */}
+          {activeTab === "wallet" && (
+            <div className="space-y-6">
+              {/* Tarjetas resumen de métricas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-2">
+                  <div className="flex items-center justify-between text-[var(--color-text-muted)]">
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Total Sales Volume
+                    </span>
+                    <DollarSign className="w-5 h-5 text-[var(--color-gold)]" />
+                  </div>
+                  <p className="text-2xl font-black text-[var(--color-text-main)]">
+                    ${financialData.metrics.totalGross.toFixed(2)}
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-2">
+                  <div className="flex items-center justify-between text-[var(--color-text-muted)]">
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Platform Revenue (3%)
+                    </span>
+                    <Percent className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-black text-emerald-600">
+                    ${financialData.metrics.totalPlatformFee.toFixed(2)}
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-2">
+                  <div className="flex items-center justify-between text-[var(--color-text-muted)]">
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Teachers Payout
+                    </span>
+                    <TrendingUp className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <p className="text-2xl font-black text-amber-600">
+                    ${financialData.metrics.totalTeacherEarnings.toFixed(2)}
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-2">
+                  <div className="flex items-center justify-between text-[var(--color-text-muted)]">
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Completed Sales
+                    </span>
+                    <Wallet className="w-5 h-5 text-[var(--color-gold)]" />
+                  </div>
+                  <p className="text-2xl font-black text-[var(--color-text-main)]">
+                    {financialData.metrics.salesCount}
+                  </p>
+                </div>
+              </div>
+
+              {/* Tabla de ventas detallada */}
+              {isLoadingFinancials ? (
+                <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)]">
+                  <p className="text-sm text-[var(--color-text-muted)]">
+                    Loading financial data...
+                  </p>
+                </div>
+              ) : financialData.sales.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] space-y-3">
+                  <Wallet className="w-12 h-12 mx-auto text-[var(--color-text-muted)] opacity-50" />
+                  <p className="text-lg font-semibold text-[var(--color-text-main)]">
+                    No sales recorded on the platform yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-custom)] rounded-2xl overflow-hidden shadow-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-[var(--color-border-custom)] bg-[var(--color-gold-light)]/30 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                          <th className="p-4">Resource</th>
+                          <th className="p-4">Teacher</th>
+                          <th className="p-4">Buyer</th>
+                          <th className="p-4">Gross Total</th>
+                          <th className="p-4">Fee (3%)</th>
+                          <th className="p-4">Teacher Earned</th>
+                          <th className="p-4">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--color-border-custom)] text-sm">
+                        {financialData.sales.map((sale) => (
+                          <tr
+                            key={sale.id}
+                            className="hover:bg-[var(--color-gold-light)]/10 transition-colors"
+                          >
+                            <td className="p-4 font-semibold text-[var(--color-text-main)]">
+                              {sale.purchase?.resource?.title || "Class"}
+                            </td>
+                            <td className="p-4">
+                              <div className="font-medium text-[var(--color-text-main)]">
+                                {sale.teacher?.user?.name || "Teacher"}
+                              </div>
+                              <div className="text-xs text-[var(--color-text-muted)]">
+                                {sale.teacher?.user?.email}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="font-medium text-[var(--color-text-main)]">
+                                {sale.purchase?.user?.name || "User"}
+                              </div>
+                              <div className="text-xs text-[var(--color-text-muted)]">
+                                {sale.purchase?.user?.email}
+                              </div>
+                            </td>
+                            <td className="p-4 font-bold text-[var(--color-text-main)]">
+                              ${sale.grossAmount.toFixed(2)}
+                            </td>
+                            <td className="p-4 font-bold text-emerald-600">
+                              +${sale.platformFee.toFixed(2)}
+                            </td>
+                            <td className="p-4 font-bold text-amber-600">
+                              ${sale.teacherEarnings.toFixed(2)}
+                            </td>
+                            <td className="p-4 text-xs text-[var(--color-text-muted)]">
+                              {new Date(sale.createdAt).toLocaleDateString()}{" "}
+                              {new Date(sale.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sección de Downloads */}
           {activeTab === "library" && (
             <div className="space-y-6">
               {isLoadingDownloads ? (
@@ -284,10 +477,10 @@ export default function AdminDashboard({
                             </td>
                             <td className="p-4">
                               <div className="font-medium text-[var(--color-text-main)]">
-                                {item.user.name || "Anonymous"}
+                                {item.user?.name || "Anonymous"}
                               </div>
                               <div className="text-xs text-[var(--color-text-muted)]">
-                                {item.user.email}
+                                {item.user?.email || item.guestEmail || "Guest"}
                               </div>
                             </td>
                             <td className="p-4">

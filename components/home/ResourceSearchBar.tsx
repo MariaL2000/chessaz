@@ -16,14 +16,18 @@ export const ResourceSearchBar = () => {
     const value = e.target.value;
     setQuery(value);
 
-    if (!value.trim()) {
+    // Si tiene 5 letras o menos, limpiamos resultados y cerramos el desplegable inmediatamente
+    if (!value.trim() || value.trim().length <= 5) {
       setResults([]);
       setIsOpen(false);
     }
   };
 
   useEffect(() => {
-    if (!query.trim()) return;
+    // Si la consulta tiene 5 letras o menos, no ejecutamos la consulta a la base de datos
+    if (!query.trim() || query.trim().length <= 5) {
+      return;
+    }
 
     const timer = setTimeout(() => {
       startTransition(async () => {
@@ -46,8 +50,8 @@ export const ResourceSearchBar = () => {
           type="text"
           value={query}
           onChange={handleInputChange}
-          onFocus={() => query.trim() && setIsOpen(true)}
-          placeholder="Search lesson by title..."
+          onFocus={() => query.trim().length > 5 && setIsOpen(true)}
+          placeholder="Search lesson (min 6 letters)..."
           className="w-full pl-10 pr-10 py-2.5 text-xs font-medium rounded-full border border-[var(--color-border-custom)] bg-[var(--color-bg-card)] text-[var(--color-text-main)] placeholder-[var(--color-text-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] transition-all shadow-sm"
         />
         {isPending && (
@@ -64,7 +68,7 @@ export const ResourceSearchBar = () => {
             results.map((item) => (
               <Link
                 key={item.id}
-                href="/login"
+                href={`/resources/${item.slug}`}
                 onClick={() => setIsOpen(false)}
                 className="flex items-center justify-between p-3 hover:bg-[var(--color-gold-light)] transition-colors border-b border-[var(--color-border-custom)] last:border-0"
               >
