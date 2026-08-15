@@ -3,13 +3,22 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_API_KEY!);
+const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+
+const genAI = new GoogleGenerativeAI(apiKey!);
 
 export async function askChessBot(
   message: string,
   history: { role: string; content: string }[],
 ) {
   try {
+    if (!apiKey) {
+      return {
+        ok: false,
+        text: "The AI assistant is not configured yet. Please contact support.",
+      };
+    }
+
     // 1. Consultar recursos recientes para dar contexto real al bot
     let resourcesContext = "";
     try {
@@ -56,7 +65,7 @@ export async function askChessBot(
 
     // 5. Enviar mensaje
     const result = await chat.sendMessage(message);
-    const response = await result.response;
+    const response = result.response;
 
     return { ok: true, text: response.text() };
   } catch (error) {

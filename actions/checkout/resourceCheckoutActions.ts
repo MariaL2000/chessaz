@@ -27,6 +27,8 @@ export async function sendOtpCheckoutAction(email: string, resourceId: string) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
+    console.log({code});
+    
     await prisma.verificationToken.create({
       data: {
         identifier: `${email}_${resourceId}`,
@@ -118,6 +120,9 @@ export async function verifyOtpAndProcessCheckoutAction(
           process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
         secureCloudinaryUrl = `${baseUrl}${secureCloudinaryUrl}`;
       }
+
+      console.log({secureCloudinaryUrl});
+      
 
       await resend.emails.send({
         from:

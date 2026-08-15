@@ -9,6 +9,16 @@ const google = createGoogleGenerativeAI({
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "GOOGLE_GENERATIVE_AI_API_KEY is not configured. Add it to your .env file.",
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     const { messages } = await req.json();
 
     let resourcesContext = "";
@@ -49,7 +59,7 @@ export async function POST(req: Request) {
     }));
 
     const result = await streamText({
-      model: google("gemini-2.5-flash"), // <-- CAMBIADO AQUÍ
+      model: google("gemini-2.0-flash"),
       system: systemPrompt,
       messages: formattedMessages,
     });
