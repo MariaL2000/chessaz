@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Loader2, Link2, CheckCircle2, AlertCircle, Wallet } from "lucide-react";
+import {
+  Loader2,
+  Link2,
+  CheckCircle2,
+  AlertCircle,
+  Wallet,
+} from "lucide-react";
 import {
   createPayPalOnboardingLinkAction,
   getPayPalConnectionStatusAction,
@@ -33,10 +39,12 @@ export function PayPalConnectCard({
   const [savedMerchantId, setSavedMerchantId] = useState<string | null>(null);
   const [showManualConnect, setShowManualConnect] = useState(false);
 
-  const applyStatus = (result: Extract<
-    Awaited<ReturnType<typeof getPayPalConnectionStatusAction>>,
-    { ok: true }
-  >) => {
+  const applyStatus = (
+    result: Extract<
+      Awaited<ReturnType<typeof getPayPalConnectionStatusAction>>,
+      { ok: true }
+    >,
+  ) => {
     setStatus(result.status);
     setIsConnected(result.isConnected);
     setCanSellPaidResources(result.canSellPaidResources);
@@ -111,12 +119,14 @@ export function PayPalConnectCard({
       if (result.alreadyConnected) {
         setIsConnected(true);
         setStatus("CONNECTED");
-        setMessage(result.message);
+        setMessage(result.message ?? null);
         loadStatus();
         return;
       }
 
-      window.location.href = result.onboardingUrl;
+      if (result.onboardingUrl) {
+        window.location.href = result.onboardingUrl;
+      }
     });
   };
 
@@ -181,8 +191,8 @@ export function PayPalConnectCard({
           </h3>
           <p className="text-sm text-[var(--color-text-muted)] mt-1">
             Required to sell paid resources. Students pay through Chessaz; your
-            share ({teacherShare}%) is sent to the Business account you configure
-            below.
+            share ({teacherShare}%) is sent to the Business account you
+            configure below.
           </p>
         </div>
         {canSellPaidResources ? (
@@ -207,7 +217,9 @@ export function PayPalConnectCard({
               : status.replaceAll("_", " ")}
         </p>
         {blockReason && (
-          <p className="text-xs text-amber-700 dark:text-amber-400">{blockReason}</p>
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            {blockReason}
+          </p>
         )}
       </div>
 
@@ -220,7 +232,9 @@ export function PayPalConnectCard({
           <dl className="grid gap-2 text-sm">
             {(businessName || businessEmail) && (
               <div>
-                <dt className="text-[var(--color-text-muted)]">Business account</dt>
+                <dt className="text-[var(--color-text-muted)]">
+                  Business account
+                </dt>
                 <dd className="font-medium text-[var(--color-text-main)]">
                   {businessName}
                   {businessName && businessEmail ? " · " : ""}
@@ -229,15 +243,20 @@ export function PayPalConnectCard({
               </div>
             )}
             <div>
-              <dt className="text-[var(--color-text-muted)]">PayPal Merchant ID</dt>
+              <dt className="text-[var(--color-text-muted)]">
+                PayPal Merchant ID
+              </dt>
               <dd className="font-mono text-xs sm:text-sm text-[var(--color-text-main)] break-all">
                 {savedMerchantId}
               </dd>
             </div>
             <div>
-              <dt className="text-[var(--color-text-muted)]">Your share per sale</dt>
+              <dt className="text-[var(--color-text-muted)]">
+                Your share per sale
+              </dt>
               <dd className="font-medium text-[var(--color-text-main)]">
-                {teacherShare}% (Chessaz keeps {platformFeePercent}% platform fee)
+                {teacherShare}% (Chessaz keeps {platformFeePercent}% platform
+                fee)
               </dd>
             </div>
           </dl>

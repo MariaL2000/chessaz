@@ -90,3 +90,8 @@ git merge origin/feature/Alejandro
 
 # 4. Sube los cambios a GitHub (esto actualizará Vercel automáticamente)
 git push origin main
+
+
+
+
+https://developer.paypal.com/sandbox-testing/accounts
