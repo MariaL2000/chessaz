@@ -1,0 +1,21 @@
+USUARIO
+  ↓
+[Hace clic en "Get Free" o "Buy"]
+  ↓
+ResourceCheckoutModal abre
+  ↓
+Ingresa EMAIL → sendOtpCheckoutAction()
+  ↓
+✉️ RESEND ENVÍA OTP al correo  --10 MINUTOS
+  ↓
+Usuario ingresa OTP → verifyOtpAndProcessCheckoutAction()
+  ↓
+Verifica en BD (Prisma)
+  ↓
+¿ES GRATUITO?
+  ├─ SÍ → Obtiene URL de Cloudinary
+  │        ✉️ RESEND ENVÍA EMAIL con LINK de descarga
+  │        Cookie guardada (7 días)
+  │
+  └─ NO → Redirige a STRIPE (línea 155)
+         Usuario paga

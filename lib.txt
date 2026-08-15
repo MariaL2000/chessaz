@@ -1,0 +1,92 @@
+Núcleo de la integración con la API REST de PayPal.
+Funciones importantes:
+getPayPalApiBaseUrl(): selecciona sandbox o live según PAYPAL_MODE.
+getPayPalAccessToken(): obtiene access_token usando PAYPAL_CLIENT_ID y PAYPAL_CLIENT_SECRET (grant_type=client_credentials).
+postPayPalOrder(), createSimplePayPalOrder(), createMarketplacePayPalOrder(): crean órdenes de pago; la marketplace usa PayPal-Auth-Assertion para actuar en nombre del vendedor y añade platform_fees.
+createPartnerReferral(): crea enlace de onboarding (partner referral) para que un vendedor conecte su cuenta.
+
+getSellerMerchantIdByTrackingId(): consulta integraciones de un partner por tracking id para obtener merchant_id del vendedor.
+createPayPalOrder(): decide si usar marketplace split (si PAYPAL_MARKETPLACE_ENABLED) o crear orden simple; si falla el split, hace fallback a orden simple.
+capturePayPalOrder(): captura (execute) una orden ya aprobada.
+buildPayPalAuthAssertion(): arma la "PayPal-Auth-Assertion" (un JWT sin firma en este código) para impersonar al vendedor cuando se usa marketplace.
+Manejo de errores robusto: parsePayPalError convierte respuestas no-ok en PayPalApiError con debug id, detalles, etc.
+
+
+
+
+lib/paypal-seller.ts
+
+Lógica útil para el frontend / validaciones relacionadas con vendedores (teachers).
+Funciones para:
+Comprobar si marketplace está enabled.
+Obtener partner id de la plataforma (PAYPAL_PARTNER_ID).
+Validar que la merchantId del vendedor sea distinta a la del platform (no pueden coincidir).
+Mostrar requisitos y pasos para sandbox (ya incluye instrucciones de sandbox).
+
+
+
+lib/platform-fees.ts
+
+Cálculo del % de comisión de la plataforma (PLATFORM_FEE_PERCENT env) y división del pago.
+formatPayPalAmount(amount): formatea a 2 decimales (string), requerido por las APIs de PayPal.
+lib/prisma.ts
+
+Inicialización del cliente Prisma usando DATABASE_URL. Exporta prisma singleton.
+
+lib/resource-access-token.ts
+
+Firma y verificación de tokens para dar acceso a descargas temporales.
+Necesita AUTH_SECRET; tiene TTLs configurables (RESOURCE_SIGNED_URL_TTL_SECONDS, RESOURCE_ACCESS_DAYS).
+buildResourceDownloadUrl usa NEXT_PUBLIC_APP_URL para construir la URL de descarga.
+lib/grant-resource-access.ts y lib/get-authorized-download-url.ts y lib/trigger-secure-download.ts
+
+Flujo para conceder acceso, registrar descarga en DB (tabla download), generar token firmado y url firmada para descarga, y cliente que dispara la descarga segura.
+grant-resource-access crea/actualiza guestAccess, registra download y devuelve accessToken + downloadUrl.
+
+
+lib/cloudinary.ts
+
+Subida y descarga firmada de recursos (archivos/imagenes) con Cloudinary.
+Variables: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.
+createSignedDownloadUrl crea URL firmada con expires_at.
+lib/mail.ts
+
+Envía notificaciones usando Resend (biblioteca Resend). Usa RESEND_API_KEY.
+Cómo funciona la integración PayPal (flujo)
+
+
+Preparación:
+La app (platform) usa sus credenciales (PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET) para autenticar con OAuth y obtener access_token.
+PAYPAL_MODE determina la base URL (sandbox o live).
+Onboarding de vendedores:
+La función createPartnerReferral genera un link para que un vendedor haga onboarding (partner referral). En sandbox puede fallar por falta de aprobación; el repo ya advierte usar manual Merchant ID en sandbox.
+Alternativa en sandbox: crear cuentas Business sandbox para vendedor y copiar su Merchant ID manualmente en el perfil.
+Crear orden:
+Si PAYPAL_MARKETPLACE_ENABLED !== "false": el código intenta createMarketplacePayPalOrder, que:
+Usa authAssertion construida con buildPayPalAuthAssertion(sellerMerchantId) para operar en nombre del vendedor.
+Incluye payment_instruction.platform_fees para que el platform reciba su fee directamente en la transacción.
+Si falla (ej. permisos / partner no aprobado), el código captura el error y hace fallback a createSimplePayPalOrder: orden normal donde la plataforma (payee por defecto) recibe el dinero y la app se encarga de pagar offline al vendedor más tarde.
+Capture:
+Después de que el comprador apruebe la orden (cliente), se llama capturePayPalOrder(orderId) para capturar el pago.
+Validaciones importantes:
+El sellerMerchantId no puede ser igual que PAYPAL_PARTNER_ID (se valida).
+formatPayPalAmount asegura 2 decimales.
+platform fees se forzan a >= $0.01 si se envía 0.
+
+
+
+
+
+
+# 1. Asegúrate de estar en main y actualiza tu repo local
+git checkout main
+git pull origin main
+
+# 2. Trae los cambios más recientes de internet
+git fetch origin
+
+# 3. Fusiona la rama de tu compañero en tu main local
+git merge origin/feature/Alejandro
+
+# 4. Sube los cambios a GitHub (esto actualizará Vercel automáticamente)
+git push origin main
