@@ -86,6 +86,37 @@ export function createSignedDownloadUrl(
   });
 }
 
+export function buildDownloadFilename(title: string, fileUrl: string): string {
+  const publicId = extractPublicIdFromCloudinaryUrl(fileUrl);
+  const extension = publicId.includes(".")
+    ? (publicId.split(".").pop()?.toLowerCase() ?? "pdf")
+    : "pdf";
+
+  const safeTitle =
+    title
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9-_ ]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 80) || "resource";
+
+  return `${safeTitle}.${extension}`;
+}
+
+export async function fetchSignedResource(fileUrl: string, ttlSeconds?: number) {
+  const signedUrl = createSignedDownloadUrl(fileUrl, ttlSeconds);
+  const response = await fetch(signedUrl);
+
+  if (!response.ok) {
+    throw new Error(
+      `Cloudinary fetch failed with status ${response.status}.`,
+    );
+  }
+
+  return response;
+}
+
 /**
  * Sube una imagen de vista previa / portada a Cloudinary
  */

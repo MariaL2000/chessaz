@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { createSignedDownloadUrl } from "@/lib/cloudinary";
-import { verifyResourceAccessToken, getSignedUrlTtlSeconds } from "@/lib/resource-access-token";
+import {
+  buildDownloadFilename,
+  fetchSignedResource,
+} from "@/lib/cloudinary";
+import {
+  getSignedUrlTtlSeconds,
+  verifyResourceAccessToken,
+} from "@/lib/resource-access-token";
 
 export async function GET(req: Request) {
   try {
@@ -40,12 +46,35 @@ export async function GET(req: Request) {
       );
     }
 
-    const signedUrl = createSignedDownloadUrl(
+    const upstream = await fetchSignedResource(
       guestAccess.resource.fileUrl,
       getSignedUrlTtlSeconds(),
     );
 
-    return Response.redirect(signedUrl, 302);
+    const filename = buildDownloadFilename(
+      guestAccess.resource.title,
+      guestAccess.resource.fileUrl,
+    );
+
+    const headers = new Headers();
+    headers.set(
+      "Content-Type",
+      upstream.headers.get("content-type") ?? "application/octet-stream",
+    );
+    headers.set("Content-Disposition", `attachment; filename="${filename}"`);
+    headers.set("Cache-Control", "private, no-store, max-age=0");
+    headers.set("Pragma", "no-cache");
+    headers.set("X-Content-Type-Options", "nosniff");
+
+    const contentLength = upstream.headers.get("content-length");
+    if (contentLength) {
+      headers.set("Content-Length", contentLength);
+    }
+
+    return new Response(upstream.body, {
+      status: 200,
+      headers,
+    });
   } catch (error) {
     console.error("Resource download API error:", error);
     return Response.json(
