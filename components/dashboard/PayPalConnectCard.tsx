@@ -62,7 +62,7 @@ export function PayPalConnectCard({
       if (result.ok) {
         applyStatus(result);
       } else {
-        setMessage(result.message);
+        setMessage(result.message ?? null);
       }
     });
   };
@@ -101,7 +101,7 @@ export function PayPalConnectCard({
       const result = await createPayPalOnboardingLinkAction(userId);
 
       if (!result.ok) {
-        setMessage(result.message);
+        setMessage(result.message ?? null);
         if ("needsManualConnect" in result && result.needsManualConnect) {
           setShowManualConnect(true);
         }
@@ -111,8 +111,13 @@ export function PayPalConnectCard({
       if (result.alreadyConnected) {
         setIsConnected(true);
         setStatus("CONNECTED");
-        setMessage(result.message);
+        setMessage(result.message ?? null);
         loadStatus();
+        return;
+      }
+
+      if (!result.onboardingUrl) {
+        setMessage("PayPal onboarding URL was not returned.");
         return;
       }
 
@@ -131,11 +136,11 @@ export function PayPalConnectCard({
       );
 
       if (!result.ok) {
-        setMessage(result.message);
+        setMessage(result.message ?? null);
         return;
       }
 
-      setMessage(result.message);
+      setMessage(result.message ?? null);
       setIsConnected(true);
       setStatus("CONNECTED");
       setCanSellPaidResources(true);

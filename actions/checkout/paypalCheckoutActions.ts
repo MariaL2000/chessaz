@@ -1,16 +1,12 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { Resend } from "resend";
 import { PurchaseStatus } from "@/app/generated/prisma/client";
-import { grantResourceAccess } from "@/lib/grant-resource-access";
-import { calculateSaleSplit, formatPayPalAmount } from "@/lib/platform-fees";
-import { capturePayPalOrder, createPayPalOrder } from "@/lib/paypal";
+import { fulfillPayPalPurchase } from "@/lib/fulfill-paypal-purchase";
+import { calculateSaleSplit } from "@/lib/platform-fees";
+import { createPayPalOrder, resolvePayPalCaptureDetails } from "@/lib/paypal";
 import { getPayPalSellerBlockReason } from "@/lib/paypal-seller";
 import { prisma } from "@/lib/prisma";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 type CheckoutIdentity = {
   resourceId: string;
   userId: string;
@@ -152,114 +148,62 @@ export async function capturePayPalOrderAction(
   input: CheckoutIdentity & { orderId: string },
 ) {
   try {
-    const resource = await validateCheckoutIdentity(input);
+    await validateCheckoutIdentity(input);
 
     const purchase = await prisma.purchase.findFirst({
       where: {
         paypalOrderId: input.orderId,
         userId: input.userId,
         resourceId: input.resourceId,
-        status: PurchaseStatus.PENDING,
       },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!purchase) {
-      throw new Error("Pending purchase not found for this PayPal order.");
+      throw new Error("Purchase not found for this PayPal order.");
     }
 
-    const captureResult = await capturePayPalOrder(input.orderId);
-
-    if (captureResult.status !== "COMPLETED") {
-      throw new Error("PayPal payment was not completed.");
-    }
-
-    const capture = captureResult.purchase_units[0]?.payments?.captures?.[0];
-
-    if (!capture || capture.status !== "COMPLETED") {
-      throw new Error("PayPal capture was not completed.");
-    }
-
-    const paidAmount = Number(capture.amount?.value ?? 0);
-
-    if (formatPayPalAmount(paidAmount) !== formatPayPalAmount(resource.price)) {
-      throw new Error("Paid amount does not match resource price.");
-    }
-
-    const split = calculateSaleSplit(resource.price);
-
-    await prisma.$transaction(async (tx) => {
-      await tx.purchase.update({
-        where: { id: purchase.id },
-        data: {
-          status: PurchaseStatus.COMPLETED,
-          paypalCaptureId: capture.id,
-          amount: paidAmount,
-        },
+    if (purchase.status === PurchaseStatus.COMPLETED && purchase.paypalCaptureId) {
+      const result = await fulfillPayPalPurchase({
+        purchaseId: purchase.id,
+        captureId: purchase.paypalCaptureId,
+        paidAmount: purchase.amount,
+        sendConfirmationEmail: false,
       });
 
-      await tx.sale.create({
-        data: {
-          purchaseId: purchase.id,
-          teacherId: resource.teacherId,
-          grossAmount: split.grossAmount,
-          platformFee: split.platformFee,
-          teacherEarnings: split.teacherEarnings,
-        },
-      });
+      return {
+        ok: true as const,
+        downloadUrl: result.downloadUrl ?? "",
+        accessToken: result.accessToken,
+        expiresAt: result.expiresAt,
+        platformFee: result.platformFee,
+        teacherEarnings: result.teacherEarnings,
+        message: "Payment was already completed.",
+      };
+    }
 
-      const existingDownload = await tx.download.findFirst({
-        where: {
-          resourceId: input.resourceId,
-          OR: [{ userId: input.userId }, { guestEmail: input.email }],
-        },
-      });
+    if (purchase.status !== PurchaseStatus.PENDING) {
+      throw new Error("Purchase is not pending payment.");
+    }
 
-      if (!existingDownload) {
-        await tx.download.create({
-          data: {
-            userId: input.userId,
-            resourceId: input.resourceId,
-            pricePaid: paidAmount,
-            isFree: false,
-          },
-        });
-      }
-    });
+    const captureDetails = await resolvePayPalCaptureDetails(input.orderId);
 
-    const access = await grantResourceAccess({
-      email: input.email,
-      resourceId: input.resourceId,
-      userId: input.userId,
-      pricePaid: paidAmount,
-      isFree: false,
-    });
-
-    await resend.emails.send({
-      from:
-        process.env.RESEND_FROM_EMAIL ||
-        "Chess Platform <onboarding@resend.dev>",
-      to: [input.email],
-      subject: "Your Chessaz purchase is ready!",
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #d97706;">Payment confirmed</h2>
-          <p>Your purchase of <strong>${resource.title}</strong> was successful.</p>
-          <p>Platform fee: <strong>$${split.platformFee.toFixed(2)}</strong> (${split.platformFeePercent}%)</p>
-          <p>Teacher earnings: <strong>$${split.teacherEarnings.toFixed(2)}</strong></p>
-          <p>You can access your file for the next <strong>${access.accessDays} days</strong>.</p>
-          <a href="${access.downloadUrl}" style="background: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Download File</a>
-        </div>
-      `,
+    const result = await fulfillPayPalPurchase({
+      purchaseId: purchase.id,
+      captureId: captureDetails.captureId,
+      paidAmount: captureDetails.paidAmount,
     });
 
     return {
       ok: true as const,
-      downloadUrl: access.downloadUrl,
-      accessToken: access.accessToken,
-      expiresAt: access.expiresAt.toISOString(),
-      platformFee: split.platformFee,
-      teacherEarnings: split.teacherEarnings,
-      message: "Payment completed successfully.",
+      downloadUrl: result.downloadUrl ?? "",
+      accessToken: result.accessToken,
+      expiresAt: result.expiresAt,
+      platformFee: result.platformFee,
+      teacherEarnings: result.teacherEarnings,
+      message: result.alreadyFulfilled
+        ? "Payment was already completed."
+        : "Payment completed successfully.",
     };
   } catch (error) {
     console.error("capturePayPalOrderAction error:", error);

@@ -31,7 +31,7 @@ export function SecureDownloadButton({
         email,
       });
 
-      if (result.ok) {
+      if (result.ok && "downloadUrl" in result) {
         await triggerSecureDownload(result.downloadUrl, label);
         return;
       }

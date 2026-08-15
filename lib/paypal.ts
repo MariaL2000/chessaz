@@ -416,23 +416,89 @@ export async function capturePayPalOrder(orderId: string) {
     throw new Error("Unable to capture PayPal payment.");
   }
 
-  return response.json() as Promise<{
-    id: string;
-    status: string;
-    purchase_units: Array<{
-      reference_id?: string;
-      payments?: {
-        captures?: Array<{
-          id: string;
-          status: string;
-          amount?: {
-            currency_code?: string;
-            value?: string;
-          };
-        }>;
-      };
-    }>;
+  return response.json() as Promise<PayPalOrderDetails>;
+}
+
+export type PayPalOrderDetails = {
+  id: string;
+  status: string;
+  purchase_units: Array<{
+    reference_id?: string;
+    custom_id?: string;
+    payments?: {
+      captures?: Array<{
+        id: string;
+        status: string;
+        amount?: {
+          currency_code?: string;
+          value?: string;
+        };
+      }>;
+    };
   }>;
+};
+
+export async function getPayPalOrder(orderId: string) {
+  const accessToken = await getPayPalAccessToken();
+
+  const response = await fetch(
+    `${getPayPalApiBaseUrl()}/v2/checkout/orders/${orderId}`,
+    {
+      headers: getPayPalRequestHeaders(accessToken),
+    },
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error("PayPal get order error:", errorBody);
+    throw new Error("Unable to fetch PayPal order.");
+  }
+
+  return response.json() as Promise<PayPalOrderDetails>;
+}
+
+function extractCaptureFromOrder(order: PayPalOrderDetails) {
+  const purchaseUnit = order.purchase_units[0];
+  const capture = purchaseUnit?.payments?.captures?.[0];
+
+  if (!capture || capture.status !== "COMPLETED") {
+    return null;
+  }
+
+  const paidAmount = Number(capture.amount?.value ?? 0);
+  if (!paidAmount) {
+    return null;
+  }
+
+  return {
+    orderId: order.id,
+    captureId: capture.id,
+    paidAmount,
+    purchaseId: purchaseUnit?.custom_id ?? purchaseUnit?.reference_id,
+  };
+}
+
+export async function resolvePayPalCaptureDetails(orderId: string) {
+  try {
+    const captureResult = await capturePayPalOrder(orderId);
+    if (captureResult.status === "COMPLETED") {
+      const details = extractCaptureFromOrder(captureResult);
+      if (details) {
+        return details;
+      }
+    }
+  } catch (error) {
+    console.warn("PayPal capture attempt failed, checking order status:", error);
+  }
+
+  const order = await getPayPalOrder(orderId);
+  const details = extractCaptureFromOrder(order);
+
+  if (!details) {
+    throw new Error("PayPal order does not contain a completed capture.");
+  }
+
+  return details;
 }
 
 export function getPayPalClientId(): string {
@@ -444,4 +510,14 @@ export function getPayPalClientId(): string {
   }
 
   return clientId;
+}
+
+export function getPayPalWebhookId(): string {
+  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+
+  if (!webhookId) {
+    throw new Error("PAYPAL_WEBHOOK_ID is not configured.");
+  }
+
+  return webhookId;
 }
