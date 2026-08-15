@@ -13,8 +13,9 @@ import {
   sendOtpCheckoutAction,
   verifyOtpAndProcessCheckoutAction,
 } from "@/actions/checkout/resourceCheckoutActions";
-import { useGuestStore } from "@/store/useGuestStore"; // <--- 1. Importa tu store de Zustand
+import { useGuestStore } from "@/store/useGuestStore";
 import { triggerSecureDownload } from "@/lib/trigger-secure-download";
+import { PayPalCheckout } from "@/components/resources/PayPalCheckout";
 
 interface ResourceCheckoutModalProps {
   resourceId: string;
@@ -42,6 +43,7 @@ export const ResourceCheckoutModal: React.FC<ResourceCheckoutModalProps> = ({
   const verifyResource = useGuestStore((state) => state.verifyResource);
   const getDownloadUrl = useGuestStore((state) => state.getDownloadUrl);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +95,10 @@ export const ResourceCheckoutModal: React.FC<ResourceCheckoutModalProps> = ({
 
       if ("downloadUrl" in res && res.downloadUrl) {
         setDownloadUrl(res.downloadUrl);
+      }
+
+      if ("userId" in res && res.userId) {
+        setUserId(res.userId);
       }
 
       if (price === 0) {
@@ -237,25 +243,34 @@ export const ResourceCheckoutModal: React.FC<ResourceCheckoutModalProps> = ({
         </div>
       )}
 
-      {step === "payment" && (
-        <div className="text-center py-6 space-y-4">
+      {step === "payment" && userId && (
+        <div className="text-center py-2 space-y-4">
           <CreditCard className="w-12 h-12 text-[var(--color-gold)] mx-auto" />
           <h4 className="font-bold text-sm text-[var(--color-text-main)]">
             Email Verified Successfully
           </h4>
           <p className="text-xs text-[var(--color-text-muted)]">
-            {successMessage} Proceed with your secure payment gateway.
+            {successMessage} Complete your payment with PayPal to unlock the
+            resource.
           </p>
-          <CustomButton
-            type="button"
-            variant="gold"
-            className="w-full"
-            onClick={() => {
-              alert("Integrating payment gateway for: " + email);
+
+          <PayPalCheckout
+            resourceId={resourceId}
+            userId={userId}
+            email={email}
+            price={price}
+            onSuccess={(result) => {
+              setDownloadUrl(result.downloadUrl);
+              verifyResource(
+                resourceId,
+                result.accessToken,
+                result.downloadUrl,
+              );
+              setSuccessMessage("Payment completed. Your download is ready.");
+              setStep("success");
             }}
-          >
-            Pay ${price.toFixed(2)} with PayPal
-          </CustomButton>
+            onError={(message) => setErrorMessage(message)}
+          />
         </div>
       )}
 

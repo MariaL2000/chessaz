@@ -148,14 +148,17 @@ enum PurchaseStatus {
 }
 
 model Purchase {
-  id         String         @id @default(cuid())
-  userId     String
-  user       User           @relation(fields: [userId], references: [id])
-  resourceId String
-  resource   Resource       @relation(fields: [resourceId], references: [id])
-  amount     Float
-  status     PurchaseStatus @default(COMPLETED)
-  createdAt  DateTime       @default(now())
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  resourceId      String
+  resource        Resource       @relation(fields: [resourceId], references: [id])
+  amount          Float
+  status          PurchaseStatus @default(PENDING)
+  paypalOrderId   String?        @unique
+  paypalCaptureId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   sale Sale?
 }

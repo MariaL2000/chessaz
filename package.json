@@ -23,6 +23,7 @@
     "@ai-sdk/google": "^4.0.44",
     "@auth/prisma-adapter": "^2.11.3",
     "@google/generative-ai": "^0.24.1",
+    "@paypal/react-paypal-js": "^10.3.0",
     "@prisma/adapter-pg": "^7.9.0",
     "@prisma/client": "^7.9.0",
     "@stripe/stripe-js": "^9.12.0",
