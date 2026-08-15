@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Role } from "@/app/generated/prisma/client";
 import { cookies } from "next/headers";
 import { grantResourceAccess } from "@/lib/grant-resource-access";
+import { getCompletedPurchaseAccess } from "@/lib/existing-purchase-access";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -145,12 +146,36 @@ export async function verifyOtpAndProcessCheckoutAction(
       };
     }
 
-    return {
-      ok: true,
-      isFree: false,
-      userId: dbUser.id,
-      message: "Email verified. Ready for payment checkout.",
-    };
+    if (price > 0) {
+      const existingAccess = await getCompletedPurchaseAccess({
+        userId: dbUser.id,
+        resourceId,
+        email,
+      });
+
+      if (existingAccess) {
+        return {
+          ok: true,
+          isFree: false,
+          alreadyPurchased: true,
+          userId: dbUser.id,
+          accessToken: existingAccess.accessToken,
+          downloadUrl: existingAccess.downloadUrl,
+          expiresAt: existingAccess.expiresAt,
+          message:
+            "You already purchased this resource. Use the download button below.",
+        };
+      }
+
+      return {
+        ok: true,
+        isFree: false,
+        userId: dbUser.id,
+        message: "Email verified. Ready for payment checkout.",
+      };
+    }
+
+    return { ok: false, message: "Invalid resource price." };
   } catch (error: any) {
     console.error("Verification error:", error);
     return {

@@ -101,7 +101,7 @@ export const ResourceCheckoutModal: React.FC<ResourceCheckoutModalProps> = ({
         setUserId(res.userId);
       }
 
-      if (price === 0) {
+      if (price === 0 || ("alreadyPurchased" in res && res.alreadyPurchased)) {
         setStep("success");
       } else {
         setStep("payment");

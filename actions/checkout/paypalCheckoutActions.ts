@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { PurchaseStatus } from "@/app/generated/prisma/client";
 import { fulfillPayPalPurchase } from "@/lib/fulfill-paypal-purchase";
+import { getCompletedPurchaseAccess } from "@/lib/existing-purchase-access";
 import { calculateSaleSplit } from "@/lib/platform-fees";
 import { createPayPalOrder, resolvePayPalCaptureDetails } from "@/lib/paypal";
 import { getPayPalSellerBlockReason } from "@/lib/paypal-seller";
@@ -63,23 +64,61 @@ async function validateCheckoutIdentity({
     );
   }
 
-  const existingPurchase = await prisma.purchase.findFirst({
-    where: {
-      userId,
-      resourceId,
-      status: PurchaseStatus.COMPLETED,
-    },
-  });
-
-  if (existingPurchase) {
-    throw new Error("You already purchased this resource.");
-  }
-
   return resource;
+}
+
+export async function getExistingPurchaseAccessAction(input: CheckoutIdentity) {
+  try {
+    const verifiedEmail = (await cookies()).get("verified_checkout_email")?.value;
+
+    if (
+      !verifiedEmail ||
+      verifiedEmail.toLowerCase() !== input.email.toLowerCase()
+    ) {
+      return { ok: false as const, message: "Email verification is required." };
+    }
+
+    const access = await getCompletedPurchaseAccess(input);
+
+    if (!access) {
+      return { ok: true as const, alreadyPurchased: false as const };
+    }
+
+    return {
+      ok: true as const,
+      alreadyPurchased: true as const,
+      downloadUrl: access.downloadUrl,
+      accessToken: access.accessToken,
+      expiresAt: access.expiresAt,
+      message: "You already purchased this resource.",
+    };
+  } catch (error) {
+    console.error("getExistingPurchaseAccessAction error:", error);
+    return {
+      ok: false as const,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unable to check purchase status.",
+    };
+  }
 }
 
 export async function createPayPalOrderAction(input: CheckoutIdentity) {
   try {
+    const existingAccess = await getCompletedPurchaseAccess(input);
+
+    if (existingAccess) {
+      return {
+        ok: true as const,
+        alreadyPurchased: true as const,
+        downloadUrl: existingAccess.downloadUrl,
+        accessToken: existingAccess.accessToken,
+        expiresAt: existingAccess.expiresAt,
+        message: "You already purchased this resource.",
+      };
+    }
+
     const resource = await validateCheckoutIdentity(input);
     const split = calculateSaleSplit(resource.price);
 
@@ -148,6 +187,18 @@ export async function capturePayPalOrderAction(
   input: CheckoutIdentity & { orderId: string },
 ) {
   try {
+    const existingAccess = await getCompletedPurchaseAccess(input);
+
+    if (existingAccess) {
+      return {
+        ok: true as const,
+        downloadUrl: existingAccess.downloadUrl,
+        accessToken: existingAccess.accessToken,
+        expiresAt: existingAccess.expiresAt,
+        message: "You already purchased this resource.",
+      };
+    }
+
     await validateCheckoutIdentity(input);
 
     const purchase = await prisma.purchase.findFirst({

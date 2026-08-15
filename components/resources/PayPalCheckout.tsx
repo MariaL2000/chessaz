@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import {
   capturePayPalOrderAction,
   createPayPalOrderAction,
+  getExistingPurchaseAccessAction,
   getPayPalCheckoutConfigAction,
 } from "@/actions/checkout/paypalCheckoutActions";
 
@@ -40,14 +41,29 @@ export function PayPalCheckout({
     teacherEarnings: price,
   });
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [alreadyPurchased, setAlreadyPurchased] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadConfig() {
-      const config = await getPayPalCheckoutConfigAction();
+      const [config, existing] = await Promise.all([
+        getPayPalCheckoutConfigAction(),
+        getExistingPurchaseAccessAction({ resourceId, userId, email }),
+      ]);
 
       if (!isMounted) return;
+
+      if (existing.ok && existing.alreadyPurchased) {
+        setAlreadyPurchased(true);
+        onSuccess({
+          downloadUrl: existing.downloadUrl,
+          accessToken: existing.accessToken,
+          expiresAt: existing.expiresAt,
+        });
+        setIsBootstrapping(false);
+        return;
+      }
 
       if (!config.ok || !config.clientId) {
         onError("PayPal is not configured yet.");
@@ -71,12 +87,14 @@ export function PayPalCheckout({
     return () => {
       isMounted = false;
     };
-  }, [onError, price]);
+  }, [email, onError, onSuccess, price, resourceId, userId]);
 
-  if (isBootstrapping) {
+  if (isBootstrapping || alreadyPurchased) {
     return (
       <div className="flex items-center justify-center py-4">
-        <Loader2 className="w-5 h-5 animate-spin text-[var(--color-gold)]" />
+        {isBootstrapping && (
+          <Loader2 className="w-5 h-5 animate-spin text-[var(--color-gold)]" />
+        )}
       </div>
     );
   }
@@ -127,6 +145,15 @@ export function PayPalCheckout({
             if (!result.ok) {
               onError(result.message);
               throw new Error(result.message);
+            }
+
+            if ("alreadyPurchased" in result && result.alreadyPurchased) {
+              onSuccess({
+                downloadUrl: result.downloadUrl,
+                accessToken: result.accessToken,
+                expiresAt: result.expiresAt,
+              });
+              return "";
             }
 
             return result.orderId;
