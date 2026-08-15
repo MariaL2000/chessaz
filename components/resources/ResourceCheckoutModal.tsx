@@ -14,6 +14,7 @@ import {
   verifyOtpAndProcessCheckoutAction,
 } from "@/actions/checkout/resourceCheckoutActions";
 import { useGuestStore } from "@/store/useGuestStore"; // <--- 1. Importa tu store de Zustand
+import { triggerSecureDownload } from "@/lib/trigger-secure-download";
 
 interface ResourceCheckoutModalProps {
   resourceId: string;
@@ -214,9 +215,20 @@ export const ResourceCheckoutModal: React.FC<ResourceCheckoutModalProps> = ({
               type="button"
               variant="gold"
               className="w-full"
-              onClick={() => {
+              onClick={async () => {
                 const url = downloadUrl || getDownloadUrl(resourceId);
-                if (url) window.open(url, "_blank");
+                if (!url) return;
+
+                try {
+                  await triggerSecureDownload(url, title);
+                } catch (error) {
+                  console.error(error);
+                  alert(
+                    error instanceof Error
+                      ? error.message
+                      : "Unable to download this resource.",
+                  );
+                }
               }}
             >
               Download Secure File

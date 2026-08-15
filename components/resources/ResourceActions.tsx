@@ -7,6 +7,7 @@ import { downloadResourceAction } from "@/actions/resources/downloadResource";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGuestStore } from "@/store/useGuestStore";
 import { ResourceCheckoutModal } from "@/components/resources/ResourceCheckoutModal";
+import { triggerSecureDownload } from "@/lib/trigger-secure-download";
 
 interface ResourceActionsProps {
   slug: string;
@@ -43,7 +44,7 @@ export const ResourceActions: React.FC<ResourceActionsProps> = ({
         setIsLoading(true);
         const result = await downloadResourceAction(slug, user?.id);
         if (result.ok && result.fileUrl) {
-          window.open(result.fileUrl, "_blank");
+          await triggerSecureDownload(result.fileUrl, title);
         } else {
           alert(result.message || "Failed to download.");
         }

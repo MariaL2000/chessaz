@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { requestResourceDownloadAction } from "@/actions/resources/requestResourceDownload";
+import { triggerSecureDownload } from "@/lib/trigger-secure-download";
 
 type SecureDownloadButtonProps = {
   resourceId: string;
@@ -31,7 +32,7 @@ export function SecureDownloadButton({
       });
 
       if (result.ok) {
-        window.open(result.downloadUrl, "_blank", "noopener,noreferrer");
+        await triggerSecureDownload(result.downloadUrl, label);
         return;
       }
 
